@@ -43,7 +43,7 @@ var (
 )
 
 // New returns a notifications app http.Handler using given services and options.
-func New(service notifications.InternalService, opt Options) http.Handler {
+func New(service notifications.InternalService, users users.Service, opt Options) http.Handler {
 	err := loadTemplates()
 	if err != nil {
 		log.Fatalln("loadTemplates:", err)
@@ -51,6 +51,7 @@ func New(service notifications.InternalService, opt Options) http.Handler {
 
 	// TODO: Move into handler?
 	ns = service
+	us = users
 
 	h := http.NewServeMux()
 	h.HandleFunc("/mock/", mockHandler)
