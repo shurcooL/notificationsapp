@@ -1,4 +1,4 @@
-# notificationsapp
+# notificationsapp [![Build Status](https://travis-ci.org/shurcooL/notificationsapp.svg?branch=master)](https://travis-ci.org/shurcooL/notificationsapp) [![GoDoc](https://godoc.org/github.com/shurcooL/notificationsapp?status.svg)](https://godoc.org/github.com/shurcooL/notificationsapp)
 
 Package notificationsapp is a web frontend for a notifications service.
 
