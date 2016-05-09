@@ -177,11 +177,11 @@ func notificationsHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if u, err := us.GetAuthenticated(globalHandler.Context(req)); err != nil {
+	if user, err := us.GetAuthenticated(globalHandler.Context(req)); err != nil {
 		log.Println("us.GetAuthenticated:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	} else if u == nil {
+	} else if user.ID == 0 {
 		http.Error(w, "this page requires an authenticated user", http.StatusUnauthorized)
 		return
 	}
