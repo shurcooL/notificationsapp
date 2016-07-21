@@ -12,8 +12,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/shurcooL/github_flavored_markdown"
 	"github.com/shurcooL/go-goon"
-	"github.com/shurcooL/go/gzip_file_server"
 	"github.com/shurcooL/httpfs/html/vfstemplate"
+	"github.com/shurcooL/httpgzip"
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/common"
 	"github.com/shurcooL/users"
@@ -60,7 +60,7 @@ func New(service notifications.InternalService, users users.Service, opt Options
 	//r.StrictSlash(true) // THINK: Can't use this due to redirect not taking baseURI into account.
 	r.HandleFunc("/", notificationsHandler).Methods("GET")
 	h.Handle("/", r)
-	assetsFileServer := gzip_file_server.New(Assets)
+	assetsFileServer := httpgzip.FileServer(Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed})
 	h.Handle("/assets/", assetsFileServer)
 
 	globalHandler = &handler{
