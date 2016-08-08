@@ -198,7 +198,7 @@ func notificationsHandler(w http.ResponseWriter, req *http.Request) {
 	err = t.ExecuteTemplate(w, "notifications.html.tmpl", &state)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		template.HTMLEscape(w, []byte(err.Error()))
 		return
 	}
 }
