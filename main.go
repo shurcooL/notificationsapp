@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"path"
 	"sort"
 	"time"
 
@@ -90,6 +91,7 @@ func loadTemplates() error {
 		"reltime": humanize.Time,
 		"gfm":     func(s string) template.HTML { return template.HTML(github_flavored_markdown.Markdown([]byte(s))) },
 		"string":  func(s *string) string { return *s },
+		"base":    path.Base,
 	})
 	t, err = vfstemplate.ParseGlob(Assets, t, "/assets/*.tmpl")
 	return err

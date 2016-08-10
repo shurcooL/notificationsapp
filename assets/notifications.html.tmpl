@@ -9,23 +9,27 @@
 
 {{define "notifications"}}
 {{with .}}{{range .}}
-	<div class="list-entry list-entry-border">
+	<div class="list-entry list-entry-border mark-as-read">
 		<div class="list-entry-header">
-			<a class="black" href="{{.RepoURL}}"><strong>{{.Repo}}</strong></a>
+			<span class="content"><a class="black" href="{{.RepoURL}}"><strong>{{.Repo.URI}}</strong></a></span>
+			<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkRead(this);" title="Mark all {{base .Repo.URI}} notifications as read"><span class="octicon octicon-check"></span></a></span>
 		</div>
 		{{range .Notifications}}
-			<div class="list-entry-body multilist-entry">
-				<table style="width: 100%;">
-				<tr>
-				<td class="notification" style="width: 70%;">
-					<span class="octicon octicon-{{.Icon}}" style="color: {{.Color.HexString}};"></span>
-					<a class="black" onclick="MarkRead(this);" href="{{.HTMLURL}}">{{.Title}}</a>
-				</td>
-				<td>
-					<span class="tiny">{{template "time" .UpdatedAt}}</span>
-				</td>
-				</tr>
-				</table>
+			<div class="list-entry-body multilist-entry mark-as-read">
+				<span class="content">
+					<table style="width: 100%;">
+					<tr>
+					<td class="notification" style="width: 70%;">
+						<span class="octicon octicon-{{.Icon}} gray-out-when-read" style="color: {{.Color.HexString}};"></span>
+						<a class="black gray-out-when-read" onclick="MarkRead(this);" href="{{.HTMLURL}}">{{.Title}}</a>
+					</td>
+					<td class="gray-out-when-read">
+						<span class="tiny">{{template "time" .UpdatedAt}}</span>
+					</td>
+					</tr>
+					</table>
+				</span>
+				<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkRead(this);" title="Mark as read"><span class="octicon octicon-check"></span></a></span>
 			</div>
 		{{end}}
 	</div>

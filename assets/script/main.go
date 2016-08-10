@@ -35,7 +35,7 @@ func setup() {
 }
 
 func MarkRead(this dom.HTMLElement) {
-	getAncestorByTagName(this, "td").(dom.HTMLElement).Class().Add("read")
+	getAncestorByClassName(this, "mark-as-read").(dom.HTMLElement).Class().Add("read")
 }
 
 func getAncestorByClassName(el dom.Element, class string) dom.Element {

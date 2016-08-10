@@ -37,6 +37,26 @@ div.multilist-entry:not(:nth-child(0n+2)) {
 	margin-right: 6px;
 }
 
-.read > * {
+.read .gray-out-when-read {
 	color: #888 !important;
+}
+.read .hide-when-read {
+	visibility: hidden;
+}
+
+span.content {
+	display: table-cell;
+	width: 100%;
+}
+span.right-icon {
+	display: table-cell;
+	vertical-align: middle;
+	padding-left: 12px;
+	padding-right: 4px;
+}
+span.right-icon a {
+	color: #bbb;
+}
+span.right-icon a:hover {
+	color: black;
 }
