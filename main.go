@@ -22,10 +22,9 @@ import (
 )
 
 type Options struct {
-	Context  func(req *http.Request) context.Context
-	RepoSpec func(req *http.Request) notifications.RepoSpec
-	BaseURI  func(req *http.Request) string
-	HeadPre  template.HTML
+	Context func(req *http.Request) context.Context
+	BaseURI func(req *http.Request) string
+	HeadPre template.HTML
 
 	// TODO.
 	BaseState func(req *http.Request) BaseState
@@ -39,12 +38,12 @@ type handler struct {
 
 // TODO: Get rid of globals.
 var (
-	ns notifications.InternalService
+	ns notifications.Service
 	us users.Service
 )
 
 // New returns a notifications app http.Handler using given services and options.
-func New(service notifications.InternalService, users users.Service, opt Options) http.Handler {
+func New(service notifications.Service, users users.Service, opt Options) http.Handler {
 	err := loadTemplates()
 	if err != nil {
 		log.Fatalln("loadTemplates:", err)
@@ -60,6 +59,8 @@ func New(service notifications.InternalService, users users.Service, opt Options
 	// TODO: Make redirection work.
 	//r.StrictSlash(true) // THINK: Can't use this due to redirect not taking baseURI into account.
 	r.HandleFunc("/", notificationsHandler).Methods("GET")
+	r.HandleFunc("/mark-read", postMarkReadHandler).Methods("POST")
+	r.HandleFunc("/mark-all-read", postMarkAllReadHandler).Methods("POST")
 	h.Handle("/", r)
 	assetsFileServer := httpgzip.FileServer(Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed})
 	h.Handle("/assets/", assetsFileServer)
@@ -179,6 +180,9 @@ func notificationsHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// THINK: Try to let service take care of authorization check. Let's see if it's a good idea...
+	//        Nope, seems like bad idea, at least with the current err = t.ExecuteTemplate() error handling,
+	//        maybe need to fix that up.
 	if user, err := us.GetAuthenticated(globalHandler.Context(req)); err != nil {
 		log.Println("us.GetAuthenticated:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -201,6 +205,44 @@ func notificationsHandler(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
 		template.HTMLEscape(w, []byte(err.Error()))
+		return
+	}
+}
+
+func postMarkReadHandler(w http.ResponseWriter, req *http.Request) {
+	ctx := globalHandler.Context(req)
+
+	var mr common.MarkReadRequest
+	err := json.NewDecoder(req.Body).Decode(&mr)
+	if err != nil {
+		log.Println("json.Decode:", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = ns.MarkRead(ctx, mr.AppID, notifications.RepoSpec{URI: mr.RepoURI}, mr.ThreadID)
+	if err != nil {
+		log.Println("ns.MarkRead:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func postMarkAllReadHandler(w http.ResponseWriter, req *http.Request) {
+	ctx := globalHandler.Context(req)
+
+	var mar common.MarkAllReadRequest
+	err := json.NewDecoder(req.Body).Decode(&mar)
+	if err != nil {
+		log.Println("json.Decode:", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = ns.MarkAllRead(ctx, notifications.RepoSpec{URI: mar.RepoURI})
+	if err != nil {
+		log.Println("ns.MarkAllRead:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
