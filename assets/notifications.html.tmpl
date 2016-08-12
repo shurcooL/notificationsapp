@@ -24,6 +24,7 @@
 						<a class="black gray-out-when-read" onclick="MarkRead(this, {{`` | json}}, {{`` | json}}, 0);" href="{{.HTMLURL}}">{{.Title}}</a>
 					</td>
 					<td class="gray-out-when-read">
+						{{if .Actor.AvatarURL}}<img class="avatar" title="@{{.Actor.Login}}" src="{{.Actor.AvatarURL}}">{{end -}}
 						<span class="tiny">{{template "time" .UpdatedAt}}</span>
 					</td>
 					</tr>

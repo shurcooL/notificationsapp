@@ -40,10 +40,16 @@ div.multilist-entry:not(:nth-child(0n+2)) {
 .read .gray-out-when-read {
 	color: #888 !important;
 }
+.read .gray-out-when-read img.avatar {
+	opacity: 0.6;
+}
 .read .hide-when-read {
 	visibility: hidden;
 }
 
+.content td {
+	padding: 0;
+}
 span.content {
 	display: table-cell;
 	width: 100%;
@@ -59,4 +65,12 @@ span.right-icon a {
 }
 span.right-icon a:hover {
 	color: black;
+}
+
+img.avatar {
+	border-radius: 2px;
+	width: 18px;
+	height: 18px;
+	vertical-align: text-top;
+	padding-right: 10px;
 }
