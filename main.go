@@ -1,6 +1,7 @@
 package notificationsapp
 
 import (
+	"context"
 	"encoding/json"
 	"html/template"
 	"log"
@@ -18,7 +19,6 @@ import (
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/common"
 	"github.com/shurcooL/users"
-	"golang.org/x/net/context"
 )
 
 type Options struct {
