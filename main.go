@@ -22,7 +22,6 @@ import (
 )
 
 type Options struct {
-	Context func(req *http.Request) context.Context
 	BaseURI func(req *http.Request) string
 	HeadPre template.HTML
 
@@ -114,7 +113,7 @@ type BaseState struct {
 
 func baseState(req *http.Request) (BaseState, error) {
 	b := globalHandler.BaseState(req)
-	b.ctx = globalHandler.Context(req)
+	b.ctx = req.Context()
 	b.req = req
 	b.vars = mux.Vars(req)
 	b.HeadPre = globalHandler.HeadPre
@@ -183,7 +182,7 @@ func notificationsHandler(w http.ResponseWriter, req *http.Request) {
 	// THINK: Try to let service take care of authorization check. Let's see if it's a good idea...
 	//        Nope, seems like bad idea, at least with the current err = t.ExecuteTemplate() error handling,
 	//        maybe need to fix that up.
-	if user, err := us.GetAuthenticated(globalHandler.Context(req)); err != nil {
+	if user, err := us.GetAuthenticated(req.Context()); err != nil {
 		log.Println("us.GetAuthenticated:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -210,8 +209,6 @@ func notificationsHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func postMarkReadHandler(w http.ResponseWriter, req *http.Request) {
-	ctx := globalHandler.Context(req)
-
 	var mr common.MarkReadRequest
 	err := json.NewDecoder(req.Body).Decode(&mr)
 	if err != nil {
@@ -220,7 +217,7 @@ func postMarkReadHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = ns.MarkRead(ctx, mr.AppID, notifications.RepoSpec{URI: mr.RepoURI}, mr.ThreadID)
+	err = ns.MarkRead(req.Context(), mr.AppID, notifications.RepoSpec{URI: mr.RepoURI}, mr.ThreadID)
 	if err != nil {
 		log.Println("ns.MarkRead:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -229,8 +226,6 @@ func postMarkReadHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func postMarkAllReadHandler(w http.ResponseWriter, req *http.Request) {
-	ctx := globalHandler.Context(req)
-
 	var mar common.MarkAllReadRequest
 	err := json.NewDecoder(req.Body).Decode(&mar)
 	if err != nil {
@@ -239,7 +234,7 @@ func postMarkAllReadHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = ns.MarkAllRead(ctx, notifications.RepoSpec{URI: mar.RepoURI})
+	err = ns.MarkAllRead(req.Context(), notifications.RepoSpec{URI: mar.RepoURI})
 	if err != nil {
 		log.Println("ns.MarkAllRead:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
