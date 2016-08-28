@@ -1,7 +1,6 @@
 package notificationsapp
 
 import (
-	"context"
 	"encoding/json"
 	"html/template"
 	"log"
@@ -91,7 +90,6 @@ func (h *handler) loadTemplates() error {
 }
 
 type BaseState struct {
-	ctx  context.Context
 	req  *http.Request
 	vars map[string]string
 
@@ -104,7 +102,6 @@ type BaseState struct {
 
 func (h *handler) baseState(req *http.Request) (BaseState, error) {
 	b := h.BaseState(req)
-	b.ctx = req.Context()
 	b.req = req
 	b.vars = mux.Vars(req)
 	b.HeadPre = h.HeadPre
@@ -127,7 +124,7 @@ type repoNotifications struct {
 }
 
 func (s state) RepoNotifications() ([]repoNotifications, error) {
-	ns, err := s.ns.List(s.ctx, nil)
+	ns, err := s.ns.List(s.req.Context(), nil)
 	if err != nil {
 		return nil, err
 	}
