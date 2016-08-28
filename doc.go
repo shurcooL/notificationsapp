@@ -1,5 +1,3 @@
-//go:generate vfsgendev -source="github.com/shurcooL/notificationsapp".Assets
-
 // Package notificationsapp is a web frontend for a notifications service.
 //
 // Note, the canonical issue tracker for this package is currently hosted at

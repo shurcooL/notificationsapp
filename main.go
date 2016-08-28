@@ -16,6 +16,7 @@ import (
 	"github.com/shurcooL/httpfs/html/vfstemplate"
 	"github.com/shurcooL/httpgzip"
 	"github.com/shurcooL/notifications"
+	"github.com/shurcooL/notificationsapp/assets"
 	"github.com/shurcooL/notificationsapp/common"
 	"github.com/shurcooL/users"
 )
@@ -59,7 +60,7 @@ func New(service notifications.Service, users users.Service, opt Options) http.H
 	r.HandleFunc("/mark-read", handler.postMarkReadHandler).Methods("POST")
 	r.HandleFunc("/mark-all-read", handler.postMarkAllReadHandler).Methods("POST")
 	h.Handle("/", r)
-	assetsFileServer := httpgzip.FileServer(Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed})
+	assetsFileServer := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed})
 	h.Handle("/assets/", assetsFileServer)
 
 	handler.Handler = h
@@ -85,7 +86,7 @@ func (h *handler) loadTemplates() error {
 		"string":  func(s *string) string { return *s },
 		"base":    path.Base,
 	})
-	t, err = vfstemplate.ParseGlob(Assets, t, "/assets/*.tmpl")
+	t, err = vfstemplate.ParseGlob(assets.Assets, t, "/assets/*.tmpl")
 	return err
 }
 

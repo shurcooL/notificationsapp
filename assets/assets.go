@@ -1,6 +1,6 @@
 // +build dev
 
-package notificationsapp
+package assets
 
 import (
 	"go/build"
@@ -19,6 +19,7 @@ func importPathToDir(importPath string) string {
 	return p.Dir
 }
 
+// Assets contains assets for notificationsapp.
 var Assets = union.New(map[string]http.FileSystem{
-	"/assets": gopherjs_http.NewFS(http.Dir(importPathToDir("github.com/shurcooL/notificationsapp/assets"))),
+	"/assets": gopherjs_http.NewFS(http.Dir(importPathToDir("github.com/shurcooL/notificationsapp/assets/_data"))),
 })
