@@ -6,15 +6,15 @@ import (
 	"path"
 )
 
-func mockHandler(w http.ResponseWriter, req *http.Request) {
-	if err := loadTemplates(); err != nil {
+func (h *handler) mockHandler(w http.ResponseWriter, req *http.Request) {
+	if err := h.loadTemplates(); err != nil {
 		log.Println("loadTemplates:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	tmpl := path.Base(req.URL.Path)
-	baseState, err := baseState(req)
+	baseState, err := h.baseState(req)
 	if err != nil {
 		log.Println("baseState:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

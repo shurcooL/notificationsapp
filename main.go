@@ -32,51 +32,44 @@ type Options struct {
 type handler struct {
 	http.Handler
 
+	ns notifications.Service
+	us users.Service
+
 	Options
 }
 
-// TODO: Get rid of globals.
-var (
-	ns notifications.Service
-	us users.Service
-)
-
 // New returns a notifications app http.Handler using given services and options.
 func New(service notifications.Service, users users.Service, opt Options) http.Handler {
-	err := loadTemplates()
+	handler := &handler{
+		ns:      service,
+		us:      users,
+		Options: opt,
+	}
+
+	err := handler.loadTemplates()
 	if err != nil {
 		log.Fatalln("loadTemplates:", err)
 	}
 
-	// TODO: Move into handler?
-	ns = service
-	us = users
-
 	h := http.NewServeMux()
-	h.HandleFunc("/mock/", mockHandler)
+	h.HandleFunc("/mock/", handler.mockHandler)
 	r := mux.NewRouter()
 	// TODO: Make redirection work.
 	//r.StrictSlash(true) // THINK: Can't use this due to redirect not taking baseURI into account.
-	r.HandleFunc("/", notificationsHandler).Methods("GET")
-	r.HandleFunc("/mark-read", postMarkReadHandler).Methods("POST")
-	r.HandleFunc("/mark-all-read", postMarkAllReadHandler).Methods("POST")
+	r.HandleFunc("/", handler.notificationsHandler).Methods("GET")
+	r.HandleFunc("/mark-read", handler.postMarkReadHandler).Methods("POST")
+	r.HandleFunc("/mark-all-read", handler.postMarkAllReadHandler).Methods("POST")
 	h.Handle("/", r)
 	assetsFileServer := httpgzip.FileServer(Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed})
 	h.Handle("/assets/", assetsFileServer)
 
-	globalHandler = &handler{
-		Options: opt,
-		Handler: h,
-	}
-	return globalHandler
+	handler.Handler = h
+	return handler
 }
-
-// TODO: Refactor to avoid global.
-var globalHandler *handler
 
 var t *template.Template
 
-func loadTemplates() error {
+func (h *handler) loadTemplates() error {
 	var err error
 	t = template.New("").Funcs(template.FuncMap{
 		"dump": func(v interface{}) string { return goon.Sdump(v) },
@@ -97,10 +90,6 @@ func loadTemplates() error {
 	return err
 }
 
-type state struct {
-	BaseState
-}
-
 type BaseState struct {
 	ctx  context.Context
 	req  *http.Request
@@ -108,17 +97,25 @@ type BaseState struct {
 
 	HeadPre template.HTML
 
+	ns notifications.Service
+
 	common.State
 }
 
-func baseState(req *http.Request) (BaseState, error) {
-	b := globalHandler.BaseState(req)
+func (h *handler) baseState(req *http.Request) (BaseState, error) {
+	b := h.BaseState(req)
 	b.ctx = req.Context()
 	b.req = req
 	b.vars = mux.Vars(req)
-	b.HeadPre = globalHandler.HeadPre
+	b.HeadPre = h.HeadPre
+
+	b.ns = h.ns
 
 	return b, nil
+}
+
+type state struct {
+	BaseState
 }
 
 type repoNotifications struct {
@@ -129,15 +126,8 @@ type repoNotifications struct {
 	updatedAt time.Time // Most recent notification.
 }
 
-// byUpdatedAt implements sort.Interface.
-type byUpdatedAt []repoNotifications
-
-func (s byUpdatedAt) Len() int           { return len(s) }
-func (s byUpdatedAt) Less(i, j int) bool { return !s[i].updatedAt.Before(s[j].updatedAt) }
-func (s byUpdatedAt) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-
 func (s state) RepoNotifications() ([]repoNotifications, error) {
-	ns, err := ns.List(s.ctx, nil)
+	ns, err := s.ns.List(s.ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -172,8 +162,15 @@ func (s state) RepoNotifications() ([]repoNotifications, error) {
 	return rns, nil
 }
 
-func notificationsHandler(w http.ResponseWriter, req *http.Request) {
-	if err := loadTemplates(); err != nil {
+// byUpdatedAt implements sort.Interface.
+type byUpdatedAt []repoNotifications
+
+func (s byUpdatedAt) Len() int           { return len(s) }
+func (s byUpdatedAt) Less(i, j int) bool { return !s[i].updatedAt.Before(s[j].updatedAt) }
+func (s byUpdatedAt) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+func (h *handler) notificationsHandler(w http.ResponseWriter, req *http.Request) {
+	if err := h.loadTemplates(); err != nil {
 		log.Println("loadTemplates:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -182,7 +179,7 @@ func notificationsHandler(w http.ResponseWriter, req *http.Request) {
 	// THINK: Try to let service take care of authorization check. Let's see if it's a good idea...
 	//        Nope, seems like bad idea, at least with the current err = t.ExecuteTemplate() error handling,
 	//        maybe need to fix that up.
-	if user, err := us.GetAuthenticated(req.Context()); err != nil {
+	if user, err := h.us.GetAuthenticated(req.Context()); err != nil {
 		log.Println("us.GetAuthenticated:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -191,7 +188,7 @@ func notificationsHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	baseState, err := baseState(req)
+	baseState, err := h.baseState(req)
 	if err != nil {
 		log.Println("baseState:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -208,7 +205,7 @@ func notificationsHandler(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func postMarkReadHandler(w http.ResponseWriter, req *http.Request) {
+func (h *handler) postMarkReadHandler(w http.ResponseWriter, req *http.Request) {
 	var mr common.MarkReadRequest
 	err := json.NewDecoder(req.Body).Decode(&mr)
 	if err != nil {
@@ -217,7 +214,7 @@ func postMarkReadHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = ns.MarkRead(req.Context(), mr.AppID, notifications.RepoSpec{URI: mr.RepoURI}, mr.ThreadID)
+	err = h.ns.MarkRead(req.Context(), mr.AppID, notifications.RepoSpec{URI: mr.RepoURI}, mr.ThreadID)
 	if err != nil {
 		log.Println("ns.MarkRead:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -225,7 +222,7 @@ func postMarkReadHandler(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func postMarkAllReadHandler(w http.ResponseWriter, req *http.Request) {
+func (h *handler) postMarkAllReadHandler(w http.ResponseWriter, req *http.Request) {
 	var mar common.MarkAllReadRequest
 	err := json.NewDecoder(req.Body).Decode(&mar)
 	if err != nil {
@@ -234,7 +231,7 @@ func postMarkAllReadHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = ns.MarkAllRead(req.Context(), notifications.RepoSpec{URI: mar.RepoURI})
+	err = h.ns.MarkAllRead(req.Context(), notifications.RepoSpec{URI: mar.RepoURI})
 	if err != nil {
 		log.Println("ns.MarkAllRead:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
