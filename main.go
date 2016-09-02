@@ -125,7 +125,7 @@ type repoNotifications struct {
 }
 
 func (s state) RepoNotifications() ([]repoNotifications, error) {
-	ns, err := s.ns.List(s.req.Context(), nil)
+	ns, err := s.ns.List(s.req.Context(), notifications.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
