@@ -1,6 +1,7 @@
 package notificationsapp
 
 import (
+	"bytes"
 	"encoding/json"
 	"html/template"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/shurcooL/github_flavored_markdown"
 	"github.com/shurcooL/go-goon"
+	"github.com/shurcooL/htmlg"
 	"github.com/shurcooL/httpfs/html/vfstemplate"
 	"github.com/shurcooL/httpgzip"
 	"github.com/shurcooL/notifications"
@@ -24,6 +26,9 @@ import (
 type Options struct {
 	BaseURI func(req *http.Request) string
 	HeadPre template.HTML
+
+	// BodyTop provides components to include on top of <body> of page rendered for req. It can be nil.
+	BodyTop func(req *http.Request) ([]htmlg.ComponentContext, error)
 
 	// TODO.
 	BaseState func(req *http.Request) BaseState
@@ -95,6 +100,7 @@ type BaseState struct {
 	vars map[string]string
 
 	HeadPre template.HTML
+	BodyTop template.HTML
 
 	ns notifications.Service
 
@@ -106,6 +112,18 @@ func (h *handler) baseState(req *http.Request) (BaseState, error) {
 	b.req = req
 	b.vars = mux.Vars(req)
 	b.HeadPre = h.HeadPre
+	if h.BodyTop != nil {
+		c, err := h.BodyTop(req)
+		if err != nil {
+			return BaseState{}, err
+		}
+		var buf bytes.Buffer
+		err = htmlg.RenderComponentsContext(req.Context(), &buf, c...)
+		if err != nil {
+			return BaseState{}, err
+		}
+		b.BodyTop = template.HTML(buf.String())
+	}
 
 	b.ns = h.ns
 
