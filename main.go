@@ -26,6 +26,7 @@ import (
 type Options struct {
 	BaseURI func(req *http.Request) string
 	HeadPre template.HTML
+	BodyPre string // An html/template definition of "body-pre" template.
 
 	// BodyTop provides components to include on top of <body> of page rendered for req. It can be nil.
 	BodyTop func(req *http.Request) ([]htmlg.ComponentContext, error)
@@ -92,6 +93,10 @@ func (h *handler) loadTemplates() error {
 		"base":    path.Base,
 	})
 	t, err = vfstemplate.ParseGlob(assets.Assets, t, "/assets/*.tmpl")
+	if err != nil {
+		return err
+	}
+	t, err = t.New("body-pre").Parse(h.BodyPre)
 	return err
 }
 
