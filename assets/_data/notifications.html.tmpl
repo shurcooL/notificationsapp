@@ -22,12 +22,12 @@
 					<table style="width: 100%;">
 					<tr>
 					<td class="notification" style="width: 70%;">
-						<span class="octicon octicon-{{.Icon}} gray-out-when-read" style="color: {{.Color.HexString}};"></span>
-						<a class="black gray-out-when-read" onclick="MarkRead(this, {{`` | json}}, {{`` | json}}, 0);" href="{{.HTMLURL}}">{{.Title}}</a>
+						<span class="octicon octicon-{{.Icon}} fade-when-read" style="color: {{.Color.HexString}};"></span>
+						<a class="black gray-when-read" onclick="MarkRead(this, {{`` | json}}, {{`` | json}}, 0);" href="{{.HTMLURL}}">{{.Title}}</a>
 					</td>
-					<td class="gray-out-when-read">
-						{{if .Actor.AvatarURL}}<img class="avatar" title="@{{.Actor.Login}}" src="{{.Actor.AvatarURL}}">{{end -}}
-						<span class="tiny">{{template "time" .UpdatedAt}}</span>
+					<td>
+						{{if .Actor.AvatarURL}}<img class="avatar fade-when-read" title="@{{.Actor.Login}}" src="{{.Actor.AvatarURL}}">{{end -}}
+						<span class="tiny gray-when-read">{{template "time" .UpdatedAt}}</span>
 					</td>
 					</tr>
 					</table>
