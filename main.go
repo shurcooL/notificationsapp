@@ -124,22 +124,10 @@ func (h *handler) loadTemplates() error {
 	return err
 }
 
-type BaseState struct {
-	req  *http.Request
-	vars map[string]string
-
-	HeadPre template.HTML
-	BodyTop template.HTML
-
-	ns notifications.Service
-
-	common.State
-}
-
-func (h *handler) baseState(req *http.Request) (BaseState, error) {
+func (h *handler) state(req *http.Request) (state, error) {
 	baseURI, ok := req.Context().Value(BaseURIContextKey).(string)
 	if !ok {
-		return BaseState{}, fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
+		return state{}, fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
 	}
 
 	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
@@ -149,7 +137,7 @@ func (h *handler) baseState(req *http.Request) (BaseState, error) {
 	if reqPath == "/" {
 		reqPath = "" // This is needed so that absolute URL for root view, i.e., /notifications, is "/notifications" and not "/notifications/" because of "/notifications" + "/".
 	}
-	b := BaseState{
+	b := state{
 		State: common.State{
 			BaseURI: baseURI,
 			ReqPath: reqPath,
@@ -161,12 +149,12 @@ func (h *handler) baseState(req *http.Request) (BaseState, error) {
 	if h.BodyTop != nil {
 		c, err := h.BodyTop(req)
 		if err != nil {
-			return BaseState{}, err
+			return state{}, err
 		}
 		var buf bytes.Buffer
 		err = htmlg.RenderComponentsContext(req.Context(), &buf, c...)
 		if err != nil {
-			return BaseState{}, err
+			return state{}, err
 		}
 		b.BodyTop = template.HTML(buf.String())
 	}
@@ -177,7 +165,15 @@ func (h *handler) baseState(req *http.Request) (BaseState, error) {
 }
 
 type state struct {
-	BaseState
+	req  *http.Request
+	vars map[string]string
+
+	HeadPre template.HTML
+	BodyTop template.HTML
+
+	ns notifications.Service
+
+	common.State
 }
 
 type repoNotifications struct {
@@ -250,14 +246,11 @@ func (h *handler) notificationsHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	baseState, err := h.baseState(req)
+	state, err := h.state(req)
 	if err != nil {
-		log.Println("baseState:", err)
+		log.Println("state:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-	state := state{
-		BaseState: baseState,
 	}
 	err = t.ExecuteTemplate(w, "notifications.html.tmpl", &state)
 	if err != nil {
