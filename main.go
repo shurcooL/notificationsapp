@@ -23,6 +23,21 @@ import (
 	"github.com/shurcooL/users"
 )
 
+// contextKey is a value for use with context.WithValue. It's used as
+// a pointer so it fits in an interface{} without allocation.
+type contextKey struct {
+	name string
+}
+
+func (k *contextKey) String() string {
+	return "github.com/shurcooL/notificationsapp context value " + k.name
+}
+
+// BaseURIContextKey is a context key for the request's base URI.
+// That value specifies the base URI prefix to use for all absolute URLs.
+// The associated value will be of type string.
+var BaseURIContextKey = &contextKey{"BaseURI"}
+
 type Options struct {
 	BaseURI func(req *http.Request) string
 	HeadPre template.HTML
