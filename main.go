@@ -3,6 +3,7 @@ package notificationsapp
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -39,7 +40,6 @@ func (k *contextKey) String() string {
 var BaseURIContextKey = &contextKey{"BaseURI"}
 
 type Options struct {
-	BaseURI func(req *http.Request) string
 	HeadPre template.HTML
 	BodyPre string // An html/template definition of "body-pre" template.
 
@@ -57,6 +57,18 @@ type handler struct {
 }
 
 // New returns a notifications app http.Handler using given services and options.
+//
+// In order to serve HTTP requests, the returned http.Handler expects each incoming
+// request to have a parameter provided to it via BaseURIContextKey context key.
+// For example:
+//
+// 	notificationsApp := notificationsapp.New(...)
+//
+// 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+// 		req = req.WithContext(context.WithValue(req.Context(), notificationsapp.BaseURIContextKey, string(...)))
+// 		notificationsApp.ServeHTTP(w, req)
+// 	})
+//
 func New(service notifications.Service, users users.Service, opt Options) http.Handler {
 	handler := &handler{
 		ns:      service,
@@ -125,7 +137,10 @@ type BaseState struct {
 }
 
 func (h *handler) baseState(req *http.Request) (BaseState, error) {
-	baseURI := h.BaseURI(req)
+	baseURI, ok := req.Context().Value(BaseURIContextKey).(string)
+	if !ok {
+		return BaseState{}, fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
+	}
 
 	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
 	//       subtracting BaseURI from full original req.URL.Path. We should be able
