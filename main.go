@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/gorilla/mux"
 	"github.com/shurcooL/github_flavored_markdown"
 	"github.com/shurcooL/go-goon"
 	"github.com/shurcooL/htmlg"
+	"github.com/shurcooL/httperror"
 	"github.com/shurcooL/httpfs/html/vfstemplate"
 	"github.com/shurcooL/httpgzip"
 	"github.com/shurcooL/notifications"
@@ -82,13 +82,9 @@ func New(service notifications.Service, users users.Service, opt Options) http.H
 	}
 
 	h := http.NewServeMux()
-	r := mux.NewRouter()
-	// TODO: Make redirection work.
-	//r.StrictSlash(true) // THINK: Can't use this due to redirect not taking baseURI into account.
-	r.HandleFunc("/", handler.notificationsHandler).Methods("GET")
-	r.HandleFunc("/mark-read", handler.postMarkReadHandler).Methods("POST")
-	r.HandleFunc("/mark-all-read", handler.postMarkAllReadHandler).Methods("POST")
-	h.Handle("/", r)
+	h.HandleFunc("/", handler.notificationsHandler)
+	h.HandleFunc("/mark-read", handler.postMarkReadHandler)
+	h.HandleFunc("/mark-all-read", handler.postMarkAllReadHandler)
 	assetsFileServer := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed})
 	h.Handle("/assets/", assetsFileServer)
 
@@ -139,7 +135,6 @@ func (h *handler) state(req *http.Request) (state, error) {
 		},
 	}
 	b.req = req
-	b.vars = mux.Vars(req)
 	b.HeadPre = h.HeadPre
 	b.BodyPre = h.BodyPre
 	if h.BodyTop != nil {
@@ -161,8 +156,7 @@ func (h *handler) state(req *http.Request) (state, error) {
 }
 
 type state struct {
-	req  *http.Request
-	vars map[string]string
+	req *http.Request
 
 	HeadPre template.HTML
 	BodyPre template.HTML
@@ -225,6 +219,11 @@ func (s byUpdatedAt) Less(i, j int) bool { return !s[i].updatedAt.Before(s[j].up
 func (s byUpdatedAt) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 func (h *handler) notificationsHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "GET" {
+		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"GET"}})
+		return
+	}
+
 	if err := h.loadTemplates(); err != nil {
 		log.Println("loadTemplates:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -258,6 +257,11 @@ func (h *handler) notificationsHandler(w http.ResponseWriter, req *http.Request)
 }
 
 func (h *handler) postMarkReadHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "POST" {
+		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"POST"}})
+		return
+	}
+
 	var mr common.MarkReadRequest
 	err := json.NewDecoder(req.Body).Decode(&mr)
 	if err != nil {
@@ -275,6 +279,11 @@ func (h *handler) postMarkReadHandler(w http.ResponseWriter, req *http.Request) 
 }
 
 func (h *handler) postMarkAllReadHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "POST" {
+		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"POST"}})
+		return
+	}
+
 	var mar common.MarkAllReadRequest
 	err := json.NewDecoder(req.Body).Decode(&mar)
 	if err != nil {
