@@ -82,7 +82,6 @@ func New(service notifications.Service, users users.Service, opt Options) http.H
 	}
 
 	h := http.NewServeMux()
-	h.HandleFunc("/mock/", handler.mockHandler)
 	r := mux.NewRouter()
 	// TODO: Make redirection work.
 	//r.StrictSlash(true) // THINK: Can't use this due to redirect not taking baseURI into account.
