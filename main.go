@@ -41,7 +41,7 @@ var BaseURIContextKey = &contextKey{"BaseURI"}
 
 type Options struct {
 	HeadPre template.HTML
-	BodyPre string // An html/template definition of "body-pre" template.
+	BodyPre template.HTML
 
 	// BodyTop provides components to include on top of <body> of page rendered for req. It can be nil.
 	BodyTop func(req *http.Request) ([]htmlg.ComponentContext, error)
@@ -117,10 +117,6 @@ func (h *handler) loadTemplates() error {
 		"base":    path.Base,
 	})
 	t, err = vfstemplate.ParseGlob(assets.Assets, t, "/assets/*.tmpl")
-	if err != nil {
-		return err
-	}
-	t, err = t.New("body-pre").Parse(h.BodyPre)
 	return err
 }
 
@@ -146,6 +142,7 @@ func (h *handler) state(req *http.Request) (state, error) {
 	b.req = req
 	b.vars = mux.Vars(req)
 	b.HeadPre = h.HeadPre
+	b.BodyPre = h.BodyPre
 	if h.BodyTop != nil {
 		c, err := h.BodyTop(req)
 		if err != nil {
@@ -169,6 +166,7 @@ type state struct {
 	vars map[string]string
 
 	HeadPre template.HTML
+	BodyPre template.HTML
 	BodyTop template.HTML
 
 	ns notifications.Service
