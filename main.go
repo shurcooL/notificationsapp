@@ -69,6 +69,13 @@ type handler struct {
 // 		notificationsApp.ServeHTTP(w, req)
 // 	})
 //
+// An HTTP API must be available:
+//
+// 	// Register HTTP API endpoints.
+// 	apiHandler := httphandler.Notifications{Notifications: service}
+// 	http.Handle(httproute.MarkRead, errorHandler{apiHandler.MarkRead})
+// 	http.Handle(httproute.MarkAllRead, errorHandler{apiHandler.MarkAllRead})
+//
 func New(service notifications.Service, users users.Service, opt Options) http.Handler {
 	handler := &handler{
 		ns:      service,
