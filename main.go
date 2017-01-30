@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/shurcooL/github_flavored_markdown"
-	"github.com/shurcooL/go-goon"
 	"github.com/shurcooL/htmlg"
 	"github.com/shurcooL/httperror"
 	"github.com/shurcooL/httpfs/html/vfstemplate"
@@ -104,18 +102,11 @@ var t *template.Template
 func (h *handler) loadTemplates() error {
 	var err error
 	t = template.New("").Funcs(template.FuncMap{
-		"dump": func(v interface{}) string { return goon.Sdump(v) },
 		"json": func(v interface{}) (string, error) {
 			b, err := json.Marshal(v)
 			return string(b), err
 		},
-		"jsonfmt": func(v interface{}) (string, error) {
-			b, err := json.MarshalIndent(v, "", "\t")
-			return string(b), err
-		},
 		"reltime": humanize.Time,
-		"gfm":     func(s string) template.HTML { return template.HTML(github_flavored_markdown.Markdown([]byte(s))) },
-		"string":  func(s *string) string { return *s },
 		"base":    path.Base,
 	})
 	t, err = vfstemplate.ParseGlob(assets.Assets, t, "/assets/*.tmpl")
