@@ -18,7 +18,6 @@ import (
 	"github.com/shurcooL/httpgzip"
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/assets"
-	"github.com/shurcooL/notificationsapp/common"
 	"github.com/shurcooL/users"
 )
 
@@ -51,7 +50,7 @@ type handler struct {
 	ns notifications.Service
 	us users.Service
 
-	Options
+	opt Options
 }
 
 // New returns a notifications app http.Handler using given services and options.
@@ -76,9 +75,9 @@ type handler struct {
 //
 func New(service notifications.Service, users users.Service, opt Options) http.Handler {
 	handler := &handler{
-		ns:      service,
-		us:      users,
-		Options: opt,
+		ns:  service,
+		us:  users,
+		opt: opt,
 	}
 
 	err := handler.loadTemplates()
@@ -86,14 +85,12 @@ func New(service notifications.Service, users users.Service, opt Options) http.H
 		log.Fatalln("loadTemplates:", err)
 	}
 
-	h := http.NewServeMux()
-	h.HandleFunc("/", handler.notificationsHandler)
-	h.HandleFunc("/mark-read", handler.postMarkReadHandler)
-	h.HandleFunc("/mark-all-read", handler.postMarkAllReadHandler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", handler.NotificationsHandler)
 	assetsFileServer := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed})
-	h.Handle("/assets/", assetsFileServer)
+	mux.Handle("/assets/", assetsFileServer)
 
-	handler.Handler = h
+	handler.Handler = mux
 	return handler
 }
 
@@ -122,21 +119,14 @@ func (h *handler) state(req *http.Request) (state, error) {
 	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
 	//       subtracting BaseURI from full original req.URL.Path. We should be able
 	//       to compute it here internally by using req.RequestURI and BaseURI.
-	reqPath := req.URL.Path
-	if reqPath == "/" {
-		reqPath = "" // This is needed so that absolute URL for root view, i.e., /notifications, is "/notifications" and not "/notifications/" because of "/notifications" + "/".
-	}
 	b := state{
-		State: common.State{
-			BaseURI: baseURI,
-			ReqPath: reqPath,
-		},
+		BaseURI: baseURI,
+		req:     req,
+		HeadPre: h.opt.HeadPre,
+		BodyPre: h.opt.BodyPre,
 	}
-	b.req = req
-	b.HeadPre = h.HeadPre
-	b.BodyPre = h.BodyPre
-	if h.BodyTop != nil {
-		c, err := h.BodyTop(req)
+	if h.opt.BodyTop != nil {
+		c, err := h.opt.BodyTop(req)
 		if err != nil {
 			return state{}, err
 		}
@@ -154,6 +144,8 @@ func (h *handler) state(req *http.Request) (state, error) {
 }
 
 type state struct {
+	BaseURI string
+
 	req *http.Request
 
 	HeadPre template.HTML
@@ -161,8 +153,6 @@ type state struct {
 	BodyTop template.HTML
 
 	ns notifications.Service
-
-	common.State
 }
 
 type repoNotifications struct {
@@ -216,7 +206,7 @@ func (s byUpdatedAt) Len() int           { return len(s) }
 func (s byUpdatedAt) Less(i, j int) bool { return !s[i].updatedAt.Before(s[j].updatedAt) }
 func (s byUpdatedAt) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
-func (h *handler) notificationsHandler(w http.ResponseWriter, req *http.Request) {
+func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "GET" {
 		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"GET"}})
 		return
@@ -250,50 +240,6 @@ func (h *handler) notificationsHandler(w http.ResponseWriter, req *http.Request)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
 		template.HTMLEscape(w, []byte(err.Error()))
-		return
-	}
-}
-
-func (h *handler) postMarkReadHandler(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "POST" {
-		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"POST"}})
-		return
-	}
-
-	var mr common.MarkReadRequest
-	err := json.NewDecoder(req.Body).Decode(&mr)
-	if err != nil {
-		log.Println("json.Decode:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = h.ns.MarkRead(req.Context(), mr.AppID, notifications.RepoSpec{URI: mr.RepoURI}, mr.ThreadID)
-	if err != nil {
-		log.Println("ns.MarkRead:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (h *handler) postMarkAllReadHandler(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "POST" {
-		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"POST"}})
-		return
-	}
-
-	var mar common.MarkAllReadRequest
-	err := json.NewDecoder(req.Body).Decode(&mar)
-	if err != nil {
-		log.Println("json.Decode:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = h.ns.MarkAllRead(req.Context(), notifications.RepoSpec{URI: mar.RepoURI})
-	if err != nil {
-		log.Println("ns.MarkAllRead:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
