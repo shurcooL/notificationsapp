@@ -212,6 +212,7 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	// TODO: Get rid of this in production mode.
 	if err := h.loadTemplates(); err != nil {
 		log.Println("loadTemplates:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -221,8 +222,8 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 	// THINK: Try to let service take care of authorization check. Let's see if it's a good idea...
 	//        Nope, seems like bad idea, at least with the current err = t.ExecuteTemplate() error handling,
 	//        maybe need to fix that up.
-	if user, err := h.us.GetAuthenticated(req.Context()); err != nil {
-		log.Println("us.GetAuthenticated:", err)
+	if user, err := h.us.GetAuthenticatedSpec(req.Context()); err != nil {
+		log.Println("us.GetAuthenticatedSpec:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	} else if user.ID == 0 {
