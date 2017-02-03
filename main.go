@@ -105,6 +105,8 @@ func (h *handler) loadTemplates() error {
 		},
 		"reltime": humanize.Time,
 		"base":    path.Base,
+
+		"render": func(c htmlg.Component) template.HTML { return htmlg.Render(c.Render()...) },
 	})
 	t, err = vfstemplate.ParseGlob(assets.Assets, t, "/assets/*.tmpl")
 	return err
@@ -155,10 +157,22 @@ type state struct {
 	ns notifications.Service
 }
 
+// notification for display purposes.
+type notification struct {
+	notifications.Notification
+}
+
+// notificationsByUpdatedAt implements sort.Interface.
+type notificationsByUpdatedAt []notification
+
+func (s notificationsByUpdatedAt) Len() int           { return len(s) }
+func (s notificationsByUpdatedAt) Less(i, j int) bool { return !s[i].UpdatedAt.Before(s[j].UpdatedAt) }
+func (s notificationsByUpdatedAt) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
 type repoNotifications struct {
 	Repo          notifications.RepoSpec
 	RepoURL       template.URL
-	Notifications notifications.Notifications
+	Notifications notificationsByUpdatedAt
 
 	updatedAt time.Time // Most recent notification.
 }
@@ -177,7 +191,7 @@ func (s state) RepoNotifications() ([]repoNotifications, error) {
 			rn := repoNotifications{
 				Repo:          r,
 				RepoURL:       n.RepoURL,
-				Notifications: notifications.Notifications{n},
+				Notifications: notificationsByUpdatedAt{notification{n}},
 				updatedAt:     n.UpdatedAt,
 			}
 			rnm[r] = &rn
@@ -185,7 +199,7 @@ func (s state) RepoNotifications() ([]repoNotifications, error) {
 			if rnp.updatedAt.Before(n.UpdatedAt) {
 				rnp.updatedAt = n.UpdatedAt
 			}
-			rnp.Notifications = append(rnp.Notifications, n)
+			rnp.Notifications = append(rnp.Notifications, notification{n})
 		}
 	}
 
