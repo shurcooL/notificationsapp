@@ -2,7 +2,6 @@ package notificationsapp
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -11,7 +10,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/shurcooL/htmlg"
 	"github.com/shurcooL/httperror"
 	"github.com/shurcooL/httpfs/html/vfstemplate"
@@ -103,13 +101,6 @@ var t *template.Template
 func (h *handler) loadTemplates() error {
 	var err error
 	t = template.New("").Funcs(template.FuncMap{
-		"json": func(v interface{}) (string, error) {
-			b, err := json.Marshal(v)
-			return string(b), err
-		},
-		"reltime": humanize.Time,
-		"base":    path.Base,
-
 		"render": func(c htmlg.Component) template.HTML { return htmlg.Render(c.Render()...) },
 	})
 	t, err = vfstemplate.ParseGlob(assets.Assets, t, "/assets/*.tmpl")
@@ -244,6 +235,50 @@ type repoNotifications struct {
 	Notifications notificationsByUpdatedAt
 
 	updatedAt time.Time // Most recent notification.
+}
+
+func (r repoNotifications) Render() []*html.Node {
+	// TODO: Make this much nicer.
+	/*
+		<div class="list-entry list-entry-border mark-as-read">
+			<div class="list-entry-header">
+				<span class="content"><a class="black" href="{{.RepoURL}}"><strong>{{.Repo.URI}}</strong></a></span>
+				<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkAllRead(this, {{.Repo.URI | json}});" title="Mark all {{base .Repo.URI}} notifications as read"><span class="octicon octicon-check"></span></a></span>
+			</div>
+			{{range .Notifications}}
+				{{render .}}
+			{{end}}
+		</div>
+	*/
+	var ns []*html.Node
+	ns = append(ns, htmlg.DivClass("list-entry-header",
+		htmlg.SpanClass("content",
+			&html.Node{
+				Type: html.ElementNode, Data: atom.A.String(),
+				Attr: []html.Attribute{
+					{Key: atom.Class.String(), Val: "black"},
+					{Key: atom.Href.String(), Val: string(r.RepoURL)},
+				},
+				FirstChild: htmlg.Strong(r.Repo.URI),
+			},
+		),
+		htmlg.SpanClass("right-icon hide-when-read",
+			&html.Node{
+				Type: html.ElementNode, Data: atom.A.String(),
+				Attr: []html.Attribute{
+					{Key: atom.Href.String(), Val: "javascript:"},
+					{Key: atom.Onclick.String(), Val: fmt.Sprintf("MarkAllRead(this, %q);", r.Repo.URI)},
+					{Key: atom.Title.String(), Val: fmt.Sprintf("Mark all %s notifications as read", path.Base(r.Repo.URI))},
+				},
+				FirstChild: octiconssvg.Check(),
+			},
+		),
+	))
+	for _, notification := range r.Notifications {
+		ns = append(ns, notification.Render()...)
+	}
+	div := htmlg.DivClass("list-entry list-entry-border mark-as-read", ns...)
+	return []*html.Node{div}
 }
 
 func (s state) RepoNotifications() ([]repoNotifications, error) {

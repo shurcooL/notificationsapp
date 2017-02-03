@@ -11,15 +11,7 @@
 
 {{define "notifications"}}
 {{with .}}{{range .}}
-	<div class="list-entry list-entry-border mark-as-read">
-		<div class="list-entry-header">
-			<span class="content"><a class="black" href="{{.RepoURL}}"><strong>{{.Repo.URI}}</strong></a></span>
-			<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkAllRead(this, {{.Repo.URI | json}});" title="Mark all {{base .Repo.URI}} notifications as read"><span class="octicon octicon-check"></span></a></span>
-		</div>
-		{{range .Notifications}}
-			{{render .}}
-		{{end}}
-	</div>
+	{{render .}}
 {{end}}{{else}}
 	<div style="text-align: center; margin-top: 80px; margin-bottom: 80px;">No new notifications.</div>
 {{end}}
