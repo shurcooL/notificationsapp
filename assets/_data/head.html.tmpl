@@ -1,9 +1,0 @@
-{{define "scriptless-head"}}
-	{{.HeadPre}}
-	<link href="{{.BaseURI}}/assets/style.css" rel="stylesheet" type="text/css" />
-{{end}}
-
-{{define "head"}}
-	{{template "scriptless-head" .}}
-	<script src="{{.BaseURI}}/assets/script/script.js" type="text/javascript"></script>
-{{end}}
