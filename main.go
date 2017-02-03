@@ -18,6 +18,7 @@ import (
 	"github.com/shurcooL/httpgzip"
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/assets"
+	"github.com/shurcooL/notificationsapp/component"
 	"github.com/shurcooL/users"
 )
 
@@ -160,6 +161,10 @@ type state struct {
 // notification for display purposes.
 type notification struct {
 	notifications.Notification
+}
+
+func (n notification) UpdatedAtComponent() htmlg.Component {
+	return component.Time{n.UpdatedAt}
 }
 
 // notificationsByUpdatedAt implements sort.Interface.

@@ -27,7 +27,7 @@
 					</td>
 					<td>
 						{{if .Actor.AvatarURL}}<img class="avatar fade-when-read" title="@{{.Actor.Login}}" src="{{.Actor.AvatarURL}}">{{end -}}
-						<span class="tiny gray-when-read">{{template "time" .UpdatedAt}}</span>
+						<span class="tiny gray-when-read">{{render .UpdatedAtComponent}}</span>
 					</td>
 					</tr>
 					</table>
