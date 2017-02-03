@@ -33,10 +33,6 @@ div.multilist-entry:not(:nth-child(0n+2)) {
 	border-top-width: 1px;
 }
 
-.notification .octicon {
-	margin-right: 6px;
-}
-
 .read .gray-when-read {
 	color: #888 !important;
 }

@@ -19,7 +19,10 @@ import (
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/assets"
 	"github.com/shurcooL/notificationsapp/component"
+	"github.com/shurcooL/octiconssvg"
 	"github.com/shurcooL/users"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
 // contextKey is a value for use with context.WithValue. It's used as
@@ -163,8 +166,69 @@ type notification struct {
 	notifications.Notification
 }
 
-func (n notification) UpdatedAtComponent() htmlg.Component {
-	return component.Time{n.UpdatedAt}
+func (n notification) Render() []*html.Node {
+	// TODO: Make this much nicer.
+	/*
+		<div class="list-entry-body multilist-entry mark-as-read">
+			<span class="content">
+				<table style="width: 100%;">
+				<tr>
+				<td class="notification" style="width: 70%;">
+					<span class="fade-when-read" style="color: {{.Color.HexString}}; margin-right: 6px; vertical-align: top;"><octiconssvg.Icon(.Icon)></span>
+					<a class="black gray-when-read" onclick="MarkRead(this, {{`` | json}}, {{`` | json}}, 0);" href="{{.HTMLURL}}">{{.Title}}</a>
+				</td>
+				<td>
+					{{if .Actor.AvatarURL}}<img class="avatar fade-when-read" title="@{{.Actor.Login}}" src="{{.Actor.AvatarURL}}">{{end -}}
+					<span class="tiny gray-when-read">Time{.UpdatedAt}</span>
+				</td>
+				</tr>
+				</table>
+			</span>
+			<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkRead(this, {{.AppID | json}}, {{.RepoSpec.URI | json}}, {{.ThreadID}});" title="Mark as read"><octiconssvg.Check()>"</a></span>
+		</div>
+	*/
+	icon := htmlg.SpanClass("fade-when-read", octiconssvg.Icon(string(n.Icon)))
+	icon.Attr = append(icon.Attr, html.Attribute{
+		Key: atom.Style.String(), Val: fmt.Sprintf("color: %s; margin-right: 6px; vertical-align: top;", n.Color.HexString()),
+	})
+	td1 := htmlg.TD(
+		icon,
+		&html.Node{
+			Type: html.ElementNode, Data: atom.A.String(),
+			Attr: []html.Attribute{
+				{Key: atom.Class.String(), Val: "black gray-when-read"},
+				{Key: atom.Onclick.String(), Val: `MarkRead(this, "", "", 0);`},
+				{Key: atom.Href.String(), Val: string(n.HTMLURL)},
+			},
+			FirstChild: htmlg.Text(n.Title),
+		},
+	)
+	td1.Attr = append(td1.Attr, html.Attribute{Key: atom.Style.String(), Val: "width: 70%;"})
+	td2 := htmlg.TD(
+		htmlg.SpanClass("tiny gray-when-read", component.Time{n.UpdatedAt}.Render()...),
+	)
+	tr := htmlg.TR(td1, td2)
+	table := &html.Node{
+		Type: html.ElementNode, Data: atom.Table.String(),
+		Attr: []html.Attribute{
+			{Key: atom.Style.String(), Val: "width: 100%;"},
+		},
+		FirstChild: tr,
+	}
+	span1 := htmlg.SpanClass("content", table)
+	span2 := htmlg.SpanClass("right-icon hide-when-read",
+		&html.Node{
+			Type: html.ElementNode, Data: atom.A.String(),
+			Attr: []html.Attribute{
+				{Key: atom.Href.String(), Val: "javascript:"},
+				{Key: atom.Onclick.String(), Val: fmt.Sprintf("MarkRead(this, %q, %q, %v);", n.AppID, n.RepoSpec.URI, n.ThreadID)},
+				{Key: atom.Title.String(), Val: "Mark as read"},
+			},
+			FirstChild: octiconssvg.Check(),
+		},
+	)
+	div := htmlg.DivClass("list-entry-body multilist-entry mark-as-read", span1, span2)
+	return []*html.Node{div}
 }
 
 // notificationsByUpdatedAt implements sort.Interface.
