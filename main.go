@@ -15,7 +15,6 @@ import (
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/assets"
 	"github.com/shurcooL/notificationsapp/component"
-	"github.com/shurcooL/users"
 )
 
 // contextKey is a value for use with context.WithValue. It's used as
@@ -45,7 +44,6 @@ type handler struct {
 	http.Handler
 
 	ns notifications.Service
-	us users.Service
 
 	opt Options
 }
@@ -69,11 +67,9 @@ type handler struct {
 // 	apiHandler := httphandler.Notifications{Notifications: service}
 // 	http.Handle(httproute.MarkRead, errorHandler{apiHandler.MarkRead})
 // 	http.Handle(httproute.MarkAllRead, errorHandler{apiHandler.MarkAllRead})
-//
-func New(service notifications.Service, users users.Service, opt Options) http.Handler {
+func New(service notifications.Service, opt Options) http.Handler {
 	handler := &handler{
 		ns:  service,
-		us:  users,
 		opt: opt,
 	}
 
@@ -99,18 +95,6 @@ var notificationsHTML = template.Must(template.New("").Parse(`<html>
 func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "GET" {
 		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"GET"}})
-		return
-	}
-
-	// THINK: Try to let service take care of authorization check. Let's see if it's a good idea...
-	//        Nope, seems like bad idea, at least with the current err = t.ExecuteTemplate() error handling,
-	//        maybe need to fix that up.
-	if user, err := h.us.GetAuthenticatedSpec(req.Context()); err != nil {
-		log.Println("us.GetAuthenticatedSpec:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	} else if user.ID == 0 {
-		http.Error(w, "this page requires an authenticated user", http.StatusUnauthorized)
 		return
 	}
 
