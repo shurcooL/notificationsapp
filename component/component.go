@@ -3,7 +3,6 @@ package component
 import (
 	"context"
 	"fmt"
-	"html/template"
 	"path"
 	"sort"
 	"time"
@@ -27,15 +26,15 @@ func FetchRepoNotifications(ctx context.Context, service notifications.Service) 
 	for _, n := range ns {
 		var r notifications.RepoSpec = n.RepoSpec
 		switch rnp := rnm[r]; rnp {
-		case nil:
+		case nil: // First notification for this RepoSpec.
 			rn := RepoNotifications{
 				Repo:          r,
-				RepoURL:       n.RepoURL,
+				RepoURL:       string(n.RepoURL),
 				Notifications: []Notification{{n}},
 				updatedAt:     n.UpdatedAt,
 			}
 			rnm[r] = &rn
-		default:
+		default: // Add notification to existing RepoNotifications.
 			if rnp.updatedAt.Before(n.UpdatedAt) {
 				rnp.updatedAt = n.UpdatedAt
 			}
@@ -101,7 +100,7 @@ func (a AllNotifications) Render() []*html.Node {
 
 type RepoNotifications struct {
 	Repo          notifications.RepoSpec
-	RepoURL       template.URL
+	RepoURL       string
 	Notifications []Notification
 
 	updatedAt time.Time // Most recent notification.
@@ -127,7 +126,7 @@ func (r RepoNotifications) Render() []*html.Node {
 				Type: html.ElementNode, Data: atom.A.String(),
 				Attr: []html.Attribute{
 					{Key: atom.Class.String(), Val: "black"},
-					{Key: atom.Href.String(), Val: string(r.RepoURL)},
+					{Key: atom.Href.String(), Val: r.RepoURL},
 				},
 				FirstChild: htmlg.Strong(r.Repo.URI),
 			},
@@ -194,9 +193,18 @@ func (n Notification) Render() []*html.Node {
 		},
 	)
 	td1.Attr = append(td1.Attr, html.Attribute{Key: atom.Style.String(), Val: "width: 70%;"})
-	td2 := htmlg.TD(
-		htmlg.SpanClass("tiny gray-when-read", Time{n.UpdatedAt}.Render()...),
-	)
+	td2 := htmlg.TD()
+	if n.Actor.ID != 0 && n.Actor.AvatarURL != "" {
+		td2.AppendChild(&html.Node{
+			Type: html.ElementNode, Data: atom.Img.String(),
+			Attr: []html.Attribute{
+				{Key: atom.Class.String(), Val: "avatar fade-when-read"},
+				{Key: atom.Title.String(), Val: "@" + n.Actor.Login},
+				{Key: atom.Src.String(), Val: string(n.Actor.AvatarURL)},
+			},
+		})
+	}
+	td2.AppendChild(htmlg.SpanClass("tiny gray-when-read", Time{n.UpdatedAt}.Render()...))
 	tr := htmlg.TR(td1, td2)
 	table := &html.Node{
 		Type: html.ElementNode, Data: atom.Table.String(),
