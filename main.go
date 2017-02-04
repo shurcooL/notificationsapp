@@ -2,6 +2,7 @@ package notificationsapp
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"io"
@@ -104,51 +105,6 @@ func (h *handler) loadTemplates() error {
 	t = template.New("")
 	t, err = vfstemplate.ParseGlob(assets.Assets, t, "/assets/*.tmpl")
 	return err
-}
-
-func (h *handler) state(req *http.Request) (state, error) {
-	baseURI, ok := req.Context().Value(BaseURIContextKey).(string)
-	if !ok {
-		return state{}, fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
-	}
-
-	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
-	//       subtracting BaseURI from full original req.URL.Path. We should be able
-	//       to compute it here internally by using req.RequestURI and BaseURI.
-	b := state{
-		BaseURI: baseURI,
-		req:     req,
-		HeadPre: h.opt.HeadPre,
-		BodyPre: h.opt.BodyPre,
-	}
-	if h.opt.BodyTop != nil {
-		c, err := h.opt.BodyTop(req)
-		if err != nil {
-			return state{}, err
-		}
-		var buf bytes.Buffer
-		err = htmlg.RenderComponentsContext(req.Context(), &buf, c...)
-		if err != nil {
-			return state{}, err
-		}
-		b.BodyTop = template.HTML(buf.String())
-	}
-
-	b.ns = h.ns
-
-	return b, nil
-}
-
-type state struct {
-	BaseURI string
-
-	req *http.Request
-
-	HeadPre template.HTML
-	BodyPre template.HTML
-	BodyTop template.HTML
-
-	ns notifications.Service
 }
 
 // notification for display purposes.
@@ -280,8 +236,8 @@ func (r repoNotifications) Render() []*html.Node {
 	return []*html.Node{div}
 }
 
-func (s state) RepoNotifications() ([]repoNotifications, error) {
-	ns, err := s.ns.List(s.req.Context(), notifications.ListOptions{})
+func RepoNotifications(ctx context.Context, service notifications.Service) ([]repoNotifications, error) {
+	ns, err := service.List(ctx, notifications.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -348,28 +304,60 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	state, err := h.state(req)
+	type state struct {
+		BaseURI string
+		HeadPre template.HTML
+		BodyPre template.HTML
+		BodyTop template.HTML
+	}
+
+	s, err := func() (state, error) {
+		baseURI, ok := req.Context().Value(BaseURIContextKey).(string)
+		if !ok {
+			return state{}, fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
+		}
+
+		// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
+		//       subtracting BaseURI from full original req.URL.Path. We should be able
+		//       to compute it here internally by using req.RequestURI and BaseURI.
+		b := state{
+			BaseURI: baseURI,
+			HeadPre: h.opt.HeadPre,
+			BodyPre: h.opt.BodyPre,
+		}
+		if h.opt.BodyTop != nil {
+			c, err := h.opt.BodyTop(req)
+			if err != nil {
+				return state{}, err
+			}
+			var buf bytes.Buffer
+			err = htmlg.RenderComponentsContext(req.Context(), &buf, c...)
+			if err != nil {
+				return state{}, err
+			}
+			b.BodyTop = template.HTML(buf.String())
+		}
+
+		return b, nil
+	}()
 	if err != nil {
 		log.Println("state:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = t.ExecuteTemplate(w, "notifications.html.tmpl", &state)
+	err = t.ExecuteTemplate(w, "notifications.html.tmpl", &s)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
-		template.HTMLEscape(w, []byte(err.Error()))
 		return
 	}
 
-	all, err := state.RepoNotifications()
+	all, err := RepoNotifications(req.Context(), h.ns)
 	if err != nil {
 		log.Println("s.RepoNotifications:", err)
-		template.HTMLEscape(w, []byte(err.Error()))
 		return
 	}
 	err = htmlg.RenderComponents(w, allNotifications{All: all})
 	if err != nil {
-		template.HTMLEscape(w, []byte(err.Error()))
 		log.Println("htmlg.RenderComponents:", err)
 		return
 	}
@@ -377,7 +365,6 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 	_, err = io.WriteString(w, `</body></html>`)
 	if err != nil {
 		log.Println("io.WriteString:", err)
-		template.HTMLEscape(w, []byte(err.Error()))
 		return
 	}
 }
