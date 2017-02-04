@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -131,7 +132,7 @@ func (r RepoNotifications) Render() []*html.Node {
 				Type: html.ElementNode, Data: atom.A.String(),
 				Attr: []html.Attribute{
 					{Key: atom.Href.String(), Val: "javascript:"},
-					{Key: atom.Onclick.String(), Val: fmt.Sprintf("MarkAllRead(this, %q);", r.Repo.URI)},
+					{Key: atom.Onclick.String(), Val: fmt.Sprintf("MarkAllRead(this, %q);", strconv.Quote(r.Repo.URI))},
 					{Key: atom.Title.String(), Val: fmt.Sprintf("Mark all %s notifications as read", path.Base(r.Repo.URI))},
 				},
 				FirstChild: octiconssvg.Check(),
@@ -181,7 +182,7 @@ func (n Notification) Render() []*html.Node {
 			Type: html.ElementNode, Data: atom.A.String(),
 			Attr: []html.Attribute{
 				{Key: atom.Class.String(), Val: "black gray-when-read"},
-				{Key: atom.Onclick.String(), Val: `MarkRead(this, "", "", 0);`},
+				{Key: atom.Onclick.String(), Val: `MarkRead(this, '""', '""', 0);`},
 				{Key: atom.Href.String(), Val: string(n.HTMLURL)},
 			},
 			FirstChild: htmlg.Text(n.Title),
@@ -214,7 +215,7 @@ func (n Notification) Render() []*html.Node {
 			Type: html.ElementNode, Data: atom.A.String(),
 			Attr: []html.Attribute{
 				{Key: atom.Href.String(), Val: "javascript:"},
-				{Key: atom.Onclick.String(), Val: fmt.Sprintf("MarkRead(this, %q, %q, %v);", n.AppID, n.RepoSpec.URI, n.ThreadID)},
+				{Key: atom.Onclick.String(), Val: fmt.Sprintf("MarkRead(this, %q, %q, %v);", strconv.Quote(n.AppID), strconv.Quote(n.RepoSpec.URI), n.ThreadID)},
 				{Key: atom.Title.String(), Val: "Mark as read"},
 			},
 			FirstChild: octiconssvg.Check(),
