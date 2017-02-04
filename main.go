@@ -281,6 +281,14 @@ func (r repoNotifications) Render() []*html.Node {
 	return []*html.Node{div}
 }
 
+func (s state) AllNotifications() (htmlg.Component, error) {
+	all, err := s.RepoNotifications()
+	if err != nil {
+		return nil, err
+	}
+	return allNotifications{All: all}, nil
+}
+
 func (s state) RepoNotifications() ([]repoNotifications, error) {
 	ns, err := s.ns.List(s.req.Context(), notifications.ListOptions{})
 	if err != nil {
@@ -361,4 +369,34 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		template.HTMLEscape(w, []byte(err.Error()))
 		return
 	}
+}
+
+type allNotifications struct {
+	All []repoNotifications
+}
+
+func (a allNotifications) Render() []*html.Node {
+	// TODO: Make this much nicer.
+	/*
+		{{if .}}{{range .}}
+			{{render .}}
+		{{end}}{{else}}
+			<div style="text-align: center; margin-top: 80px; margin-bottom: 80px;">No new notifications.</div>
+		{{end}}
+	*/
+	if len(a.All) == 0 {
+		div := &html.Node{
+			Type: html.ElementNode, Data: atom.Div.String(),
+			Attr: []html.Attribute{
+				{Key: atom.Style.String(), Val: "text-align: center; margin-top: 80px; margin-bottom: 80px;"},
+			},
+			FirstChild: htmlg.Text("No new notifications."),
+		}
+		return []*html.Node{div}
+	}
+	var ns []*html.Node
+	for _, repoNotifications := range a.All {
+		ns = append(ns, repoNotifications.Render()...)
+	}
+	return ns
 }
