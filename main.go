@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"path"
@@ -100,9 +101,7 @@ var t *template.Template
 
 func (h *handler) loadTemplates() error {
 	var err error
-	t = template.New("").Funcs(template.FuncMap{
-		"render": func(c htmlg.Component) template.HTML { return htmlg.Render(c.Render()...) },
-	})
+	t = template.New("")
 	t, err = vfstemplate.ParseGlob(assets.Assets, t, "/assets/*.tmpl")
 	return err
 }
@@ -281,14 +280,6 @@ func (r repoNotifications) Render() []*html.Node {
 	return []*html.Node{div}
 }
 
-func (s state) AllNotifications() (htmlg.Component, error) {
-	all, err := s.RepoNotifications()
-	if err != nil {
-		return nil, err
-	}
-	return allNotifications{All: all}, nil
-}
-
 func (s state) RepoNotifications() ([]repoNotifications, error) {
 	ns, err := s.ns.List(s.req.Context(), notifications.ListOptions{})
 	if err != nil {
@@ -366,6 +357,26 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 	err = t.ExecuteTemplate(w, "notifications.html.tmpl", &state)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
+		template.HTMLEscape(w, []byte(err.Error()))
+		return
+	}
+
+	all, err := state.RepoNotifications()
+	if err != nil {
+		log.Println("s.RepoNotifications:", err)
+		template.HTMLEscape(w, []byte(err.Error()))
+		return
+	}
+	err = htmlg.RenderComponents(w, allNotifications{All: all})
+	if err != nil {
+		template.HTMLEscape(w, []byte(err.Error()))
+		log.Println("htmlg.RenderComponents:", err)
+		return
+	}
+
+	_, err = io.WriteString(w, `</body></html>`)
+	if err != nil {
+		log.Println("io.WriteString:", err)
 		template.HTMLEscape(w, []byte(err.Error()))
 		return
 	}
