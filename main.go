@@ -14,7 +14,6 @@ import (
 
 	"github.com/shurcooL/htmlg"
 	"github.com/shurcooL/httperror"
-	"github.com/shurcooL/httpfs/html/vfstemplate"
 	"github.com/shurcooL/httpgzip"
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/assets"
@@ -84,11 +83,6 @@ func New(service notifications.Service, users users.Service, opt Options) http.H
 		opt: opt,
 	}
 
-	err := handler.loadTemplates()
-	if err != nil {
-		log.Fatalln("loadTemplates:", err)
-	}
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handler.NotificationsHandler)
 	assetsFileServer := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed})
@@ -96,15 +90,6 @@ func New(service notifications.Service, users users.Service, opt Options) http.H
 
 	handler.Handler = mux
 	return handler
-}
-
-var t *template.Template
-
-func (h *handler) loadTemplates() error {
-	var err error
-	t = template.New("")
-	t, err = vfstemplate.ParseGlob(assets.Assets, t, "/assets/*.tmpl")
-	return err
 }
 
 // notification for display purposes.
@@ -279,16 +264,19 @@ func (s byUpdatedAt) Len() int           { return len(s) }
 func (s byUpdatedAt) Less(i, j int) bool { return !s[i].updatedAt.Before(s[j].updatedAt) }
 func (s byUpdatedAt) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
+var notificationsHTML = template.Must(template.New("").Parse(`<html>
+	<head>
+		{{.HeadPre}}
+		<link href="{{.BaseURI}}/assets/style.css" rel="stylesheet" type="text/css" />
+		<script src="{{.BaseURI}}/assets/script/script.js" type="text/javascript"></script>
+	</head>
+	<body>
+		{{.BodyPre}}
+		{{.BodyTop}}`))
+
 func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "GET" {
 		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"GET"}})
-		return
-	}
-
-	// TODO: Get rid of this in production mode.
-	if err := h.loadTemplates(); err != nil {
-		log.Println("loadTemplates:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -345,9 +333,9 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = t.ExecuteTemplate(w, "notifications.html.tmpl", &s)
+	err = notificationsHTML.Execute(w, &s)
 	if err != nil {
-		log.Println("t.ExecuteTemplate:", err)
+		log.Println("notificationsHTML.ExecuteTemplate:", err)
 		return
 	}
 
