@@ -2,15 +2,11 @@ package notificationsapp
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
-	"path"
-	"sort"
-	"time"
 
 	"github.com/shurcooL/htmlg"
 	"github.com/shurcooL/httperror"
@@ -18,10 +14,7 @@ import (
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/assets"
 	"github.com/shurcooL/notificationsapp/component"
-	"github.com/shurcooL/octiconssvg"
 	"github.com/shurcooL/users"
-	"golang.org/x/net/html"
-	"golang.org/x/net/html/atom"
 )
 
 // contextKey is a value for use with context.WithValue. It's used as
@@ -91,178 +84,6 @@ func New(service notifications.Service, users users.Service, opt Options) http.H
 	handler.Handler = mux
 	return handler
 }
-
-// notification for display purposes.
-type notification struct {
-	notifications.Notification
-}
-
-func (n notification) Render() []*html.Node {
-	// TODO: Make this much nicer.
-	/*
-		<div class="list-entry-body multilist-entry mark-as-read">
-			<span class="content">
-				<table style="width: 100%;">
-				<tr>
-				<td class="notification" style="width: 70%;">
-					<span class="fade-when-read" style="color: {{.Color.HexString}}; margin-right: 6px; vertical-align: top;"><octiconssvg.Icon(.Icon)></span>
-					<a class="black gray-when-read" onclick="MarkRead(this, {{`` | json}}, {{`` | json}}, 0);" href="{{.HTMLURL}}">{{.Title}}</a>
-				</td>
-				<td>
-					{{if .Actor.AvatarURL}}<img class="avatar fade-when-read" title="@{{.Actor.Login}}" src="{{.Actor.AvatarURL}}">{{end -}}
-					<span class="tiny gray-when-read">Time{.UpdatedAt}</span>
-				</td>
-				</tr>
-				</table>
-			</span>
-			<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkRead(this, {{.AppID | json}}, {{.RepoSpec.URI | json}}, {{.ThreadID}});" title="Mark as read"><octiconssvg.Check()>"</a></span>
-		</div>
-	*/
-	icon := htmlg.SpanClass("fade-when-read", octiconssvg.Icon(string(n.Icon)))
-	icon.Attr = append(icon.Attr, html.Attribute{
-		Key: atom.Style.String(), Val: fmt.Sprintf("color: %s; margin-right: 6px; vertical-align: top;", n.Color.HexString()),
-	})
-	td1 := htmlg.TD(
-		icon,
-		&html.Node{
-			Type: html.ElementNode, Data: atom.A.String(),
-			Attr: []html.Attribute{
-				{Key: atom.Class.String(), Val: "black gray-when-read"},
-				{Key: atom.Onclick.String(), Val: `MarkRead(this, "", "", 0);`},
-				{Key: atom.Href.String(), Val: string(n.HTMLURL)},
-			},
-			FirstChild: htmlg.Text(n.Title),
-		},
-	)
-	td1.Attr = append(td1.Attr, html.Attribute{Key: atom.Style.String(), Val: "width: 70%;"})
-	td2 := htmlg.TD(
-		htmlg.SpanClass("tiny gray-when-read", component.Time{n.UpdatedAt}.Render()...),
-	)
-	tr := htmlg.TR(td1, td2)
-	table := &html.Node{
-		Type: html.ElementNode, Data: atom.Table.String(),
-		Attr: []html.Attribute{
-			{Key: atom.Style.String(), Val: "width: 100%;"},
-		},
-		FirstChild: tr,
-	}
-	span1 := htmlg.SpanClass("content", table)
-	span2 := htmlg.SpanClass("right-icon hide-when-read",
-		&html.Node{
-			Type: html.ElementNode, Data: atom.A.String(),
-			Attr: []html.Attribute{
-				{Key: atom.Href.String(), Val: "javascript:"},
-				{Key: atom.Onclick.String(), Val: fmt.Sprintf("MarkRead(this, %q, %q, %v);", n.AppID, n.RepoSpec.URI, n.ThreadID)},
-				{Key: atom.Title.String(), Val: "Mark as read"},
-			},
-			FirstChild: octiconssvg.Check(),
-		},
-	)
-	div := htmlg.DivClass("list-entry-body multilist-entry mark-as-read", span1, span2)
-	return []*html.Node{div}
-}
-
-// notificationsByUpdatedAt implements sort.Interface.
-type notificationsByUpdatedAt []notification
-
-func (s notificationsByUpdatedAt) Len() int           { return len(s) }
-func (s notificationsByUpdatedAt) Less(i, j int) bool { return !s[i].UpdatedAt.Before(s[j].UpdatedAt) }
-func (s notificationsByUpdatedAt) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-
-type repoNotifications struct {
-	Repo          notifications.RepoSpec
-	RepoURL       template.URL
-	Notifications notificationsByUpdatedAt
-
-	updatedAt time.Time // Most recent notification.
-}
-
-func (r repoNotifications) Render() []*html.Node {
-	// TODO: Make this much nicer.
-	/*
-		<div class="list-entry list-entry-border mark-as-read">
-			<div class="list-entry-header">
-				<span class="content"><a class="black" href="{{.RepoURL}}"><strong>{{.Repo.URI}}</strong></a></span>
-				<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkAllRead(this, {{.Repo.URI | json}});" title="Mark all {{base .Repo.URI}} notifications as read"><span class="octicon octicon-check"></span></a></span>
-			</div>
-			{{range .Notifications}}
-				{{render .}}
-			{{end}}
-		</div>
-	*/
-	var ns []*html.Node
-	ns = append(ns, htmlg.DivClass("list-entry-header",
-		htmlg.SpanClass("content",
-			&html.Node{
-				Type: html.ElementNode, Data: atom.A.String(),
-				Attr: []html.Attribute{
-					{Key: atom.Class.String(), Val: "black"},
-					{Key: atom.Href.String(), Val: string(r.RepoURL)},
-				},
-				FirstChild: htmlg.Strong(r.Repo.URI),
-			},
-		),
-		htmlg.SpanClass("right-icon hide-when-read",
-			&html.Node{
-				Type: html.ElementNode, Data: atom.A.String(),
-				Attr: []html.Attribute{
-					{Key: atom.Href.String(), Val: "javascript:"},
-					{Key: atom.Onclick.String(), Val: fmt.Sprintf("MarkAllRead(this, %q);", r.Repo.URI)},
-					{Key: atom.Title.String(), Val: fmt.Sprintf("Mark all %s notifications as read", path.Base(r.Repo.URI))},
-				},
-				FirstChild: octiconssvg.Check(),
-			},
-		),
-	))
-	for _, notification := range r.Notifications {
-		ns = append(ns, notification.Render()...)
-	}
-	div := htmlg.DivClass("list-entry list-entry-border mark-as-read", ns...)
-	return []*html.Node{div}
-}
-
-func RepoNotifications(ctx context.Context, service notifications.Service) ([]repoNotifications, error) {
-	ns, err := service.List(ctx, notifications.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	rnm := make(map[notifications.RepoSpec]*repoNotifications)
-	for _, n := range ns {
-		var r notifications.RepoSpec = n.RepoSpec
-		switch rnp := rnm[r]; rnp {
-		case nil:
-			rn := repoNotifications{
-				Repo:          r,
-				RepoURL:       n.RepoURL,
-				Notifications: notificationsByUpdatedAt{notification{n}},
-				updatedAt:     n.UpdatedAt,
-			}
-			rnm[r] = &rn
-		default:
-			if rnp.updatedAt.Before(n.UpdatedAt) {
-				rnp.updatedAt = n.UpdatedAt
-			}
-			rnp.Notifications = append(rnp.Notifications, notification{n})
-		}
-	}
-
-	var rns []repoNotifications
-	for _, rnp := range rnm {
-		sort.Sort(rnp.Notifications)
-		rns = append(rns, *rnp)
-	}
-	sort.Sort(byUpdatedAt(rns))
-
-	return rns, nil
-}
-
-// byUpdatedAt implements sort.Interface.
-type byUpdatedAt []repoNotifications
-
-func (s byUpdatedAt) Len() int           { return len(s) }
-func (s byUpdatedAt) Less(i, j int) bool { return !s[i].updatedAt.Before(s[j].updatedAt) }
-func (s byUpdatedAt) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 var notificationsHTML = template.Must(template.New("").Parse(`<html>
 	<head>
@@ -339,12 +160,12 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	all, err := RepoNotifications(req.Context(), h.ns)
+	all, err := component.FetchRepoNotifications(req.Context(), h.ns)
 	if err != nil {
-		log.Println("s.RepoNotifications:", err)
+		log.Println("component.FetchRepoNotifications:", err)
 		return
 	}
-	err = htmlg.RenderComponents(w, allNotifications{All: all})
+	err = htmlg.RenderComponents(w, component.AllNotifications{All: all})
 	if err != nil {
 		log.Println("htmlg.RenderComponents:", err)
 		return
@@ -355,34 +176,4 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		log.Println("io.WriteString:", err)
 		return
 	}
-}
-
-type allNotifications struct {
-	All []repoNotifications
-}
-
-func (a allNotifications) Render() []*html.Node {
-	// TODO: Make this much nicer.
-	/*
-		{{if .}}{{range .}}
-			{{render .}}
-		{{end}}{{else}}
-			<div style="text-align: center; margin-top: 80px; margin-bottom: 80px;">No new notifications.</div>
-		{{end}}
-	*/
-	if len(a.All) == 0 {
-		div := &html.Node{
-			Type: html.ElementNode, Data: atom.Div.String(),
-			Attr: []html.Attribute{
-				{Key: atom.Style.String(), Val: "text-align: center; margin-top: 80px; margin-bottom: 80px;"},
-			},
-			FirstChild: htmlg.Text("No new notifications."),
-		}
-		return []*html.Node{div}
-	}
-	var ns []*html.Node
-	for _, repoNotifications := range a.All {
-		ns = append(ns, repoNotifications.Render()...)
-	}
-	return ns
 }
