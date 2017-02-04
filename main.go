@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/shurcooL/htmlg"
 	"github.com/shurcooL/httperror"
@@ -113,6 +114,15 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	ns, err := h.ns.List(req.Context(), notifications.ListOptions{})
+	if os.IsPermission(err) {
+		http.Error(w, "403 Forbidden", http.StatusUnauthorized)
+		return
+	} else if err != nil {
+		log.Println("h.ns.List:", err)
+		return
+	}
+
 	type state struct {
 		BaseURI string
 		HeadPre template.HTML
@@ -160,12 +170,7 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	all, err := component.FetchRepoNotifications(req.Context(), h.ns)
-	if err != nil {
-		log.Println("component.FetchRepoNotifications:", err)
-		return
-	}
-	err = htmlg.RenderComponents(w, component.AllNotifications{All: all})
+	err = htmlg.RenderComponents(w, component.NotificationsByRepo{Notifications: ns})
 	if err != nil {
 		log.Println("htmlg.RenderComponents:", err)
 		return

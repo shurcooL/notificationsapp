@@ -1,7 +1,6 @@
 package component
 
 import (
-	"context"
 	"fmt"
 	"path"
 	"sort"
@@ -15,15 +14,42 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
-// TODO: This doesn't belong here, does it? Figure out where to best move it.
-func FetchRepoNotifications(ctx context.Context, service notifications.Service) ([]RepoNotifications, error) {
-	ns, err := service.List(ctx, notifications.ListOptions{})
-	if err != nil {
-		return nil, err
+// NotificationsByRepo component displays notifications grouped by repos.
+type NotificationsByRepo struct {
+	Notifications notifications.Notifications
+}
+
+func (a NotificationsByRepo) Render() []*html.Node {
+	// TODO: Make this much nicer.
+	/*
+		{{if .}}{{range .}}
+			{{render .}}
+		{{end}}{{else}}
+			<div style="text-align: center; margin-top: 80px; margin-bottom: 80px;">No new notifications.</div>
+		{{end}}
+	*/
+	if len(a.Notifications) == 0 {
+		// TODO: Maybe use blankslate Primer CSS component?
+		div := &html.Node{
+			Type: html.ElementNode, Data: atom.Div.String(),
+			Attr: []html.Attribute{
+				{Key: atom.Style.String(), Val: "text-align: center; margin-top: 80px; margin-bottom: 80px;"},
+			},
+			FirstChild: htmlg.Text("No new notifications."),
+		}
+		return []*html.Node{div}
 	}
 
+	var ns []*html.Node
+	for _, repoNotifications := range a.groupAndSort() {
+		ns = append(ns, repoNotifications.Render()...)
+	}
+	return ns
+}
+
+func (a NotificationsByRepo) groupAndSort() []RepoNotifications {
 	rnm := make(map[notifications.RepoSpec]*RepoNotifications)
-	for _, n := range ns {
+	for _, n := range a.Notifications {
 		var r notifications.RepoSpec = n.RepoSpec
 		switch rnp := rnm[r]; rnp {
 		case nil: // First notification for this RepoSpec.
@@ -49,7 +75,7 @@ func FetchRepoNotifications(ctx context.Context, service notifications.Service) 
 	}
 	sort.Sort(rnByUpdatedAt(rns))
 
-	return rns, nil
+	return rns
 }
 
 // rnByUpdatedAt implements sort.Interface.
@@ -66,38 +92,7 @@ func (s nByUpdatedAt) Len() int           { return len(s) }
 func (s nByUpdatedAt) Less(i, j int) bool { return !s[i].UpdatedAt.Before(s[j].UpdatedAt) }
 func (s nByUpdatedAt) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
-// ---
-
-type AllNotifications struct {
-	All []RepoNotifications
-}
-
-func (a AllNotifications) Render() []*html.Node {
-	// TODO: Make this much nicer.
-	/*
-		{{if .}}{{range .}}
-			{{render .}}
-		{{end}}{{else}}
-			<div style="text-align: center; margin-top: 80px; margin-bottom: 80px;">No new notifications.</div>
-		{{end}}
-	*/
-	if len(a.All) == 0 {
-		div := &html.Node{
-			Type: html.ElementNode, Data: atom.Div.String(),
-			Attr: []html.Attribute{
-				{Key: atom.Style.String(), Val: "text-align: center; margin-top: 80px; margin-bottom: 80px;"},
-			},
-			FirstChild: htmlg.Text("No new notifications."),
-		}
-		return []*html.Node{div}
-	}
-	var ns []*html.Node
-	for _, repoNotifications := range a.All {
-		ns = append(ns, repoNotifications.Render()...)
-	}
-	return ns
-}
-
+// RepoNotifications component is a collection of notifications for the same repo.
 type RepoNotifications struct {
 	Repo          notifications.RepoSpec
 	RepoURL       string
@@ -150,7 +145,7 @@ func (r RepoNotifications) Render() []*html.Node {
 	return []*html.Node{div}
 }
 
-// Notification for display purposes.
+// Notification component for display purposes.
 type Notification struct {
 	notifications.Notification
 }
@@ -229,7 +224,8 @@ func (n Notification) Render() []*html.Node {
 	return []*html.Node{div}
 }
 
-// Time component.
+// Time component that displays human friendly relative time (e.g., "2 hours ago", "yesterday"),
+// but also contains a tooltip with the full absolute time (e.g., "Jan 2, 2006, 3:04 PM MST").
 type Time struct {
 	Time time.Time
 }
