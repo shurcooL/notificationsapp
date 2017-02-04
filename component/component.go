@@ -50,7 +50,7 @@ func (a NotificationsByRepo) Render() []*html.Node {
 func (a NotificationsByRepo) groupAndSort() []RepoNotifications {
 	rnm := make(map[notifications.RepoSpec]*RepoNotifications)
 	for _, n := range a.Notifications {
-		var r notifications.RepoSpec = n.RepoSpec
+		r := n.RepoSpec
 		switch rnp := rnm[r]; rnp {
 		case nil: // First notification for this RepoSpec.
 			rn := RepoNotifications{
@@ -231,6 +231,7 @@ type Time struct {
 }
 
 func (t Time) Render() []*html.Node {
+	// TODO: Make this much nicer.
 	// <abbr title="{{.Format "Jan _2, 2006, 3:04 PM MST"}}">{{reltime .}}</abbr>
 	abbr := &html.Node{
 		Type: html.ElementNode, Data: atom.Abbr.String(),
