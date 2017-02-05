@@ -49,6 +49,7 @@ func (a NotificationsByRepo) Render() []*html.Node {
 }
 
 func (a NotificationsByRepo) groupAndSort() []RepoNotifications {
+	// Group by RepoSpec into RepoNotifications collections.
 	rnm := make(map[notifications.RepoSpec]*RepoNotifications)
 	for _, n := range a.Notifications {
 		r := n.RepoSpec
@@ -69,6 +70,7 @@ func (a NotificationsByRepo) groupAndSort() []RepoNotifications {
 		}
 	}
 
+	// Sort by UpdatedAt time.
 	var rns []RepoNotifications
 	for _, rnp := range rnm {
 		sort.Sort(nByUpdatedAt(rnp.Notifications))
