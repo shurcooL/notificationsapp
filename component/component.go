@@ -58,7 +58,7 @@ func (a NotificationsByRepo) groupAndSort() []RepoNotifications {
 			rn := RepoNotifications{
 				Repo:          r,
 				RepoURL:       string(n.RepoURL),
-				Notifications: []Notification{{n}},
+				Notifications: []Notification{{Notification: n}},
 				updatedAt:     n.UpdatedAt,
 			}
 			rnm[r] = &rn
@@ -66,7 +66,7 @@ func (a NotificationsByRepo) groupAndSort() []RepoNotifications {
 			if rnp.updatedAt.Before(n.UpdatedAt) {
 				rnp.updatedAt = n.UpdatedAt
 			}
-			rnp.Notifications = append(rnp.Notifications, Notification{n})
+			rnp.Notifications = append(rnp.Notifications, Notification{Notification: n})
 		}
 	}
 
@@ -101,7 +101,7 @@ type RepoNotifications struct {
 	RepoURL       string
 	Notifications []Notification
 
-	updatedAt time.Time // Most recent notification.
+	updatedAt time.Time // Most recent notification. Used only by NotificationsByRepo.groupAndSort.
 }
 
 func (r RepoNotifications) Render() []*html.Node {
@@ -141,16 +141,25 @@ func (r RepoNotifications) Render() []*html.Node {
 			},
 		),
 	))
+	anyUnread := false
 	for _, notification := range r.Notifications {
+		if !notification.Read {
+			anyUnread = true
+		}
 		ns = append(ns, notification.Render()...)
 	}
-	div := htmlg.DivClass("list-entry list-entry-border mark-as-read", ns...)
+	divClass := "list-entry list-entry-border mark-as-read"
+	if !anyUnread {
+		divClass += " read"
+	}
+	div := htmlg.DivClass(divClass, ns...)
 	return []*html.Node{div}
 }
 
 // Notification component for display purposes.
 type Notification struct {
 	notifications.Notification
+	Read bool
 }
 
 func (n Notification) Render() []*html.Node {
@@ -223,7 +232,11 @@ func (n Notification) Render() []*html.Node {
 			FirstChild: octiconssvg.Check(),
 		},
 	)
-	div := htmlg.DivClass("list-entry-body multilist-entry mark-as-read", span1, span2)
+	divClass := "list-entry-body multilist-entry mark-as-read"
+	if n.Read {
+		divClass += " read"
+	}
+	div := htmlg.DivClass(divClass, span1, span2)
 	return []*html.Node{div}
 }
 

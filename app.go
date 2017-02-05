@@ -5,14 +5,20 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/shurcooL/httperror"
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp"
+	"github.com/shurcooL/notificationsapp/httphandler"
+	"github.com/shurcooL/notificationsapp/httproute"
 	"github.com/shurcooL/users"
 )
 
@@ -54,6 +60,11 @@ func run() error {
 		notificationsApp.ServeHTTP(w, req)
 	})
 
+	// Register HTTP API endpoints.
+	apiHandler := httphandler.Notifications{Notifications: service}
+	http.Handle(httproute.MarkRead, errorHandler(apiHandler.MarkRead))
+	http.Handle(httproute.MarkAllRead, errorHandler(apiHandler.MarkAllRead))
+
 	log.Println("Started.")
 
 	err := http.ListenAndServe(*httpFlag, nil)
@@ -62,6 +73,16 @@ func run() error {
 
 type mockNotifications struct {
 	notifications.Service
+}
+
+func (mockNotifications) MarkRead(ctx context.Context, appID string, repo notifications.RepoSpec, threadID uint64) error {
+	// TODO: Perhaps have it modify what List returns, etc.
+	return nil
+}
+
+func (mockNotifications) MarkAllRead(ctx context.Context, repo notifications.RepoSpec) error {
+	// TODO: Perhaps have it modify what List returns, etc.
+	return nil
 }
 
 func (mockNotifications) List(ctx context.Context, opt notifications.ListOptions) (notifications.Notifications, error) {
@@ -390,4 +411,55 @@ func (mockNotifications) List(ctx context.Context, opt notifications.ListOptions
 		}),
 	})
 	return ns, nil
+}
+
+// errorHandler factors error handling out of the HTTP handler.
+type errorHandler func(w http.ResponseWriter, req *http.Request) error
+
+func (h errorHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	err := h(w, req)
+	if err == nil {
+		// Do nothing.
+		return
+	}
+	if err, ok := httperror.IsMethod(err); ok {
+		httperror.HandleMethod(w, err)
+		return
+	}
+	if err, ok := httperror.IsRedirect(err); ok {
+		http.Redirect(w, req, err.URL, http.StatusSeeOther)
+		return
+	}
+	if err, ok := httperror.IsHTTP(err); ok {
+		code := err.Code
+		error := fmt.Sprintf("%d %s", code, http.StatusText(code))
+		if code == http.StatusBadRequest {
+			error += "\n\n" + err.Error()
+		}
+		http.Error(w, error, code)
+		return
+	}
+	if err, ok := httperror.IsJSONResponse(err); ok {
+		w.Header().Set("Content-Type", "application/json")
+		jw := json.NewEncoder(w)
+		jw.SetIndent("", "\t")
+		err := jw.Encode(err.V)
+		if err != nil {
+			log.Println("error encoding JSONResponse:", err)
+		}
+		return
+	}
+	if os.IsNotExist(err) {
+		log.Println(err)
+		http.Error(w, "404 Not Found", http.StatusNotFound)
+		return
+	}
+	if os.IsPermission(err) {
+		log.Println(err)
+		http.Error(w, "403 Forbidden", http.StatusUnauthorized)
+		return
+	}
+
+	log.Println(err)
+	http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
 }

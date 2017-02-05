@@ -65,8 +65,8 @@ type handler struct {
 //
 // 	// Register HTTP API endpoints.
 // 	apiHandler := httphandler.Notifications{Notifications: service}
-// 	http.Handle(httproute.MarkRead, errorHandler{apiHandler.MarkRead})
-// 	http.Handle(httproute.MarkAllRead, errorHandler{apiHandler.MarkAllRead})
+// 	http.Handle(httproute.MarkRead, errorHandler(apiHandler.MarkRead))
+// 	http.Handle(httproute.MarkAllRead, errorHandler(apiHandler.MarkAllRead))
 func New(service notifications.Service, opt Options) http.Handler {
 	handler := &handler{
 		ns:  service,
