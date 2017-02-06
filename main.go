@@ -36,7 +36,7 @@ type Options struct {
 	BodyPre template.HTML
 
 	// BodyTop provides components to include on top of <body> of page rendered for req. It can be nil.
-	BodyTop func(req *http.Request) ([]htmlg.ComponentContext, error)
+	BodyTop func(req *http.Request) ([]htmlg.Component, error)
 }
 
 type handler struct {
@@ -136,9 +136,9 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 			log.Println("h.opt.BodyTop:", err)
 			return
 		}
-		err = htmlg.RenderComponentsContext(req.Context(), w, c...)
+		err = htmlg.RenderComponents(w, c...)
 		if err != nil {
-			log.Println("htmlg.RenderComponentsContext:", err)
+			log.Println("htmlg.RenderComponents:", err)
 			return
 		}
 	}
