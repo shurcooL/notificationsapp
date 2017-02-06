@@ -18,12 +18,31 @@ import (
 // Notifications implements notifications.Service remotely over HTTP.
 type Notifications struct{}
 
-func (Notifications) List(_ context.Context, opt notifications.ListOptions) (notifications.Notifications, error) {
-	return nil, fmt.Errorf("List: not implemented")
+func (Notifications) List(ctx context.Context, opt notifications.ListOptions) (notifications.Notifications, error) {
+	v := url.Values{} // TODO: Automate this conversion process.
+	if opt.Repo != nil {
+		v.Set("RepoURI", opt.Repo.URI)
+	}
+	u := url.URL{
+		Path:     httproute.List,
+		RawQuery: v.Encode(),
+	}
+	resp, err := ctxhttp.Get(ctx, nil, u.String())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, fmt.Errorf("did not get acceptable status code: %v body: %q", resp.Status, body)
+	}
+	var ns notifications.Notifications
+	err = json.NewDecoder(resp.Body).Decode(&ns)
+	return ns, err
 }
 
 func (Notifications) Count(ctx context.Context, opt interface{}) (uint64, error) {
-	resp, err := ctxhttp.Get(ctx, nil, "/api/notifications/count")
+	resp, err := ctxhttp.Get(ctx, nil, httproute.Count)
 	if err != nil {
 		return 0, err
 	}
