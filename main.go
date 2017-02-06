@@ -1,7 +1,6 @@
 package notificationsapp
 
 import (
-	"bytes"
 	"fmt"
 	"html/template"
 	"io"
@@ -89,8 +88,7 @@ var notificationsHTML = template.Must(template.New("").Parse(`<html>
 		<script src="{{.BaseURI}}/assets/script/script.js" type="text/javascript"></script>
 	</head>
 	<body>
-		{{.BodyPre}}
-		{{.BodyTop}}`))
+		{{.BodyPre}}`))
 
 func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "GET" {
@@ -107,51 +105,42 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	type state struct {
-		BaseURI string
-		HeadPre template.HTML
-		BodyPre template.HTML
-		BodyTop template.HTML
-	}
-
-	s, err := func() (state, error) {
-		baseURI, ok := req.Context().Value(BaseURIContextKey).(string)
-		if !ok {
-			return state{}, fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
-		}
-
-		// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
-		//       subtracting BaseURI from full original req.URL.Path. We should be able
-		//       to compute it here internally by using req.RequestURI and BaseURI.
-		b := state{
-			BaseURI: baseURI,
-			HeadPre: h.opt.HeadPre,
-			BodyPre: h.opt.BodyPre,
-		}
-		if h.opt.BodyTop != nil {
-			c, err := h.opt.BodyTop(req)
-			if err != nil {
-				return state{}, err
-			}
-			var buf bytes.Buffer
-			err = htmlg.RenderComponentsContext(req.Context(), &buf, c...)
-			if err != nil {
-				return state{}, err
-			}
-			b.BodyTop = template.HTML(buf.String())
-		}
-
-		return b, nil
-	}()
-	if err != nil {
-		log.Println("state:", err)
+	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
+	//       subtracting BaseURI from full original req.URL.Path. We should be able
+	//       to compute it here internally by using req.RequestURI and BaseURI.
+	baseURI, ok := req.Context().Value(BaseURIContextKey).(string)
+	if !ok {
+		err := fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = notificationsHTML.Execute(w, &s)
+	state := struct {
+		BaseURI string
+		HeadPre template.HTML
+		BodyPre template.HTML
+	}{
+		baseURI,
+		h.opt.HeadPre,
+		h.opt.BodyPre,
+	}
+	err = notificationsHTML.Execute(w, &state)
 	if err != nil {
 		log.Println("notificationsHTML.ExecuteTemplate:", err)
 		return
+	}
+
+	if h.opt.BodyTop != nil {
+		c, err := h.opt.BodyTop(req)
+		if err != nil {
+			log.Println("h.opt.BodyTop:", err)
+			return
+		}
+		err = htmlg.RenderComponentsContext(req.Context(), w, c...)
+		if err != nil {
+			log.Println("htmlg.RenderComponentsContext:", err)
+			return
+		}
 	}
 
 	err = htmlg.RenderComponents(w, component.NotificationsByRepo{Notifications: ns})
