@@ -5,16 +5,14 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
-	"github.com/shurcooL/httperror"
+	"github.com/shurcooL/home/httputil"
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp"
 	"github.com/shurcooL/notificationsapp/httphandler"
@@ -36,6 +34,7 @@ func main() {
 func run() error {
 	flag.Parse()
 
+	users := mockUsers{}
 	service := mockNotifications{}
 
 	opt := notificationsapp.Options{
@@ -62,8 +61,10 @@ func run() error {
 
 	// Register HTTP API endpoints.
 	apiHandler := httphandler.Notifications{Notifications: service}
-	http.Handle(httproute.MarkRead, errorHandler(apiHandler.MarkRead))
-	http.Handle(httproute.MarkAllRead, errorHandler(apiHandler.MarkAllRead))
+	http.Handle(httproute.List, httputil.ErrorHandler(users, apiHandler.List))
+	http.Handle(httproute.Count, httputil.ErrorHandler(users, apiHandler.Count))
+	http.Handle(httproute.MarkRead, httputil.ErrorHandler(users, apiHandler.MarkRead))
+	http.Handle(httproute.MarkAllRead, httputil.ErrorHandler(users, apiHandler.MarkAllRead))
 
 	log.Println("Started.")
 
@@ -71,8 +72,49 @@ func run() error {
 	return err
 }
 
+type mockUsers struct {
+	users.Service
+}
+
+func (mockUsers) Get(_ context.Context, user users.UserSpec) (users.User, error) {
+	switch {
+	case user == users.UserSpec{ID: 1, Domain: "example.org"}:
+		return users.User{
+			UserSpec: user,
+			Login:    "gopher",
+			Name:     "Sample Gopher",
+			Email:    "gopher@example.org",
+		}, nil
+	default:
+		return users.User{}, fmt.Errorf("user %v not found", user)
+	}
+}
+
+func (mockUsers) GetAuthenticatedSpec(_ context.Context) (users.UserSpec, error) {
+	return users.UserSpec{ID: 1, Domain: "example.org"}, nil
+}
+
+func (m mockUsers) GetAuthenticated(ctx context.Context) (users.User, error) {
+	userSpec, err := m.GetAuthenticatedSpec(ctx)
+	if err != nil {
+		return users.User{}, err
+	}
+	if userSpec.ID == 0 {
+		return users.User{}, nil
+	}
+	return m.Get(ctx, userSpec)
+}
+
 type mockNotifications struct {
-	notifications.Service
+	notifications.ExternalService
+}
+
+func (mockNotifications) List(ctx context.Context, opt notifications.ListOptions) (notifications.Notifications, error) {
+	return ns, nil
+}
+
+func (mockNotifications) Count(ctx context.Context, opt interface{}) (uint64, error) {
+	return uint64(len(ns)), nil
 }
 
 func (mockNotifications) MarkRead(ctx context.Context, appID string, repo notifications.RepoSpec, threadID uint64) error {
@@ -85,10 +127,10 @@ func (mockNotifications) MarkAllRead(ctx context.Context, repo notifications.Rep
 	return nil
 }
 
-func (mockNotifications) List(ctx context.Context, opt notifications.ListOptions) (notifications.Notifications, error) {
+// ns is a list of mock notifications.
+var ns = func() notifications.Notifications {
 	passed := time.Since(time.Date(1, 1, 1, 0, 0, 63621777703, 945428426, time.UTC))
-
-	ns := (notifications.Notifications)(notifications.Notifications{
+	return (notifications.Notifications)(notifications.Notifications{
 		(notifications.Notification)(notifications.Notification{
 			AppID: (string)("PullRequest"),
 			RepoSpec: (notifications.RepoSpec)(notifications.RepoSpec{
@@ -410,56 +452,4 @@ func (mockNotifications) List(ctx context.Context, opt notifications.ListOptions
 			HTMLURL:   (template.URL)("https://github.com/neelance/graphql-go/issues/53#comment-277322972"),
 		}),
 	})
-	return ns, nil
-}
-
-// errorHandler factors error handling out of the HTTP handler.
-type errorHandler func(w http.ResponseWriter, req *http.Request) error
-
-func (h errorHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	err := h(w, req)
-	if err == nil {
-		// Do nothing.
-		return
-	}
-	if err, ok := httperror.IsMethod(err); ok {
-		httperror.HandleMethod(w, err)
-		return
-	}
-	if err, ok := httperror.IsRedirect(err); ok {
-		http.Redirect(w, req, err.URL, http.StatusSeeOther)
-		return
-	}
-	if err, ok := httperror.IsHTTP(err); ok {
-		code := err.Code
-		error := fmt.Sprintf("%d %s", code, http.StatusText(code))
-		if code == http.StatusBadRequest {
-			error += "\n\n" + err.Error()
-		}
-		http.Error(w, error, code)
-		return
-	}
-	if err, ok := httperror.IsJSONResponse(err); ok {
-		w.Header().Set("Content-Type", "application/json")
-		jw := json.NewEncoder(w)
-		jw.SetIndent("", "\t")
-		err := jw.Encode(err.V)
-		if err != nil {
-			log.Println("error encoding JSONResponse:", err)
-		}
-		return
-	}
-	if os.IsNotExist(err) {
-		log.Println(err)
-		http.Error(w, "404 Not Found", http.StatusNotFound)
-		return
-	}
-	if os.IsPermission(err) {
-		log.Println(err)
-		http.Error(w, "403 Forbidden", http.StatusUnauthorized)
-		return
-	}
-
-	log.Println(err)
-	http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
-}
+}()
