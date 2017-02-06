@@ -54,7 +54,7 @@ func (h Notifications) MarkRead(w http.ResponseWriter, req *http.Request) error 
 	repo := notifications.RepoSpec{URI: q.Get("RepoURI")}
 	threadID, err := strconv.ParseUint(q.Get("ThreadID"), 10, 64)
 	if err != nil {
-		return httperror.HTTP{Code: http.StatusBadRequest, Err: fmt.Errorf("parsing ThreadID query parameter: %v", err)}
+		return httperror.BadRequest{Err: fmt.Errorf("parsing ThreadID query parameter: %v", err)}
 	}
 	err = h.Notifications.MarkRead(req.Context(), appID, repo, threadID)
 	return err
