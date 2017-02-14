@@ -137,7 +137,7 @@ var ns = func() notifications.Notifications {
 				URI: (string)("github.com/bradleyfalzon/gopherci"),
 			}),
 			ThreadID: (uint64)(60),
-			RepoURL:  (template.URL)("https://github.com/bradleyfalzon/gopherci"),
+			RepoURL:  (string)("https://github.com/bradleyfalzon/gopherci"),
 			Title:    (string)("Support GitHub PushEvent"),
 			Icon:     (notifications.OcticonID)("git-pull-request"),
 			Color: (notifications.RGB)(notifications.RGB{
@@ -161,7 +161,7 @@ var ns = func() notifications.Notifications {
 				SiteAdmin: (bool)(false),
 			}),
 			UpdatedAt: (time.Time)(time.Date(1, 1, 1, 0, 0, 63621776801, 0, time.UTC).Add(passed)),
-			HTMLURL:   (template.URL)("https://github.com/bradleyfalzon/gopherci/pull/60#comment-277416148"),
+			HTMLURL:   (string)("https://github.com/bradleyfalzon/gopherci/pull/60#comment-277416148"),
 		}),
 		(notifications.Notification)(notifications.Notification{
 			AppID: (string)("PullRequest"),
@@ -169,7 +169,7 @@ var ns = func() notifications.Notifications {
 				URI: (string)("github.com/ryanuber/go-glob"),
 			}),
 			ThreadID: (uint64)(5),
-			RepoURL:  (template.URL)("https://github.com/ryanuber/go-glob"),
+			RepoURL:  (string)("https://github.com/ryanuber/go-glob"),
 			Title:    (string)("Add GlobI for case-insensitive globbing"),
 			Icon:     (notifications.OcticonID)("git-pull-request"),
 			Color: (notifications.RGB)(notifications.RGB{
@@ -193,7 +193,7 @@ var ns = func() notifications.Notifications {
 				SiteAdmin: (bool)(false),
 			}),
 			UpdatedAt: (time.Time)(time.Date(1, 1, 1, 0, 0, 63621776446, 0, time.UTC).Add(passed)),
-			HTMLURL:   (template.URL)("https://github.com/ryanuber/go-glob/pull/5#comment-277415841"),
+			HTMLURL:   (string)("https://github.com/ryanuber/go-glob/pull/5#comment-277415841"),
 		}),
 		(notifications.Notification)(notifications.Notification{
 			AppID: (string)("Issue"),
@@ -201,7 +201,7 @@ var ns = func() notifications.Notifications {
 				URI: (string)("github.com/nsf/gocode"),
 			}),
 			ThreadID: (uint64)(419),
-			RepoURL:  (template.URL)("https://github.com/nsf/gocode"),
+			RepoURL:  (string)("https://github.com/nsf/gocode"),
 			Title:    (string)("panic: unknown export format version 4"),
 			Icon:     (notifications.OcticonID)("issue-closed"),
 			Color: (notifications.RGB)(notifications.RGB{
@@ -225,7 +225,7 @@ var ns = func() notifications.Notifications {
 				SiteAdmin: (bool)(false),
 			}),
 			UpdatedAt: (time.Time)(time.Date(1, 1, 1, 0, 0, 63621775009, 0, time.UTC).Add(passed)),
-			HTMLURL:   (template.URL)("https://github.com/nsf/gocode/issues/419#comment-277414645"),
+			HTMLURL:   (string)("https://github.com/nsf/gocode/issues/419#comment-277414645"),
 		}),
 		(notifications.Notification)(notifications.Notification{
 			AppID: (string)("Issue"),
@@ -233,7 +233,7 @@ var ns = func() notifications.Notifications {
 				URI: (string)("github.com/robpike/ivy"),
 			}),
 			ThreadID: (uint64)(31),
-			RepoURL:  (template.URL)("https://github.com/robpike/ivy"),
+			RepoURL:  (string)("https://github.com/robpike/ivy"),
 			Title:    (string)("loop termination condition seems wrong"),
 			Icon:     (notifications.OcticonID)("issue-opened"),
 			Color: (notifications.RGB)(notifications.RGB{
@@ -257,7 +257,7 @@ var ns = func() notifications.Notifications {
 				SiteAdmin: (bool)(false),
 			}),
 			UpdatedAt: (time.Time)(time.Date(1, 1, 1, 0, 0, 63621763429, 0, time.UTC).Add(passed)),
-			HTMLURL:   (template.URL)("https://github.com/robpike/ivy/issues/31#comment-277396571"),
+			HTMLURL:   (string)("https://github.com/robpike/ivy/issues/31#comment-277396571"),
 		}),
 		(notifications.Notification)(notifications.Notification{
 			AppID: (string)("PullRequest"),
@@ -265,7 +265,7 @@ var ns = func() notifications.Notifications {
 				URI: (string)("github.com/nsf/gocode"),
 			}),
 			ThreadID: (uint64)(417),
-			RepoURL:  (template.URL)("https://github.com/nsf/gocode"),
+			RepoURL:  (string)("https://github.com/nsf/gocode"),
 			Title:    (string)("[WIP] package_bin: support type alias"),
 			Icon:     (notifications.OcticonID)("git-pull-request"),
 			Color: (notifications.RGB)(notifications.RGB{
@@ -289,7 +289,7 @@ var ns = func() notifications.Notifications {
 				SiteAdmin: (bool)(false),
 			}),
 			UpdatedAt: (time.Time)(time.Date(1, 1, 1, 0, 0, 63621764131, 0, time.UTC).Add(passed)),
-			HTMLURL:   (template.URL)("https://github.com/nsf/gocode/pull/417#comment-277398182"),
+			HTMLURL:   (string)("https://github.com/nsf/gocode/pull/417#comment-277398182"),
 		}),
 		(notifications.Notification)(notifications.Notification{
 			AppID: (string)("PullRequest"),
@@ -297,7 +297,7 @@ var ns = func() notifications.Notifications {
 				URI: (string)("github.com/google/go-github"),
 			}),
 			ThreadID: (uint64)(538),
-			RepoURL:  (template.URL)("https://github.com/google/go-github"),
+			RepoURL:  (string)("https://github.com/google/go-github"),
 			Title:    (string)("Added listing outside collaborators for an organization"),
 			Icon:     (notifications.OcticonID)("git-pull-request"),
 			Color: (notifications.RGB)(notifications.RGB{
@@ -321,7 +321,7 @@ var ns = func() notifications.Notifications {
 				SiteAdmin: (bool)(false),
 			}),
 			UpdatedAt: (time.Time)(time.Date(1, 1, 1, 0, 0, 63621757401, 0, time.UTC).Add(passed)),
-			HTMLURL:   (template.URL)("https://github.com/google/go-github/pull/538#comment-277378904"),
+			HTMLURL:   (string)("https://github.com/google/go-github/pull/538#comment-277378904"),
 		}),
 		(notifications.Notification)(notifications.Notification{
 			AppID: (string)("Issue"),
@@ -329,7 +329,7 @@ var ns = func() notifications.Notifications {
 				URI: (string)("github.com/nsf/gocode"),
 			}),
 			ThreadID: (uint64)(396),
-			RepoURL:  (template.URL)("https://github.com/nsf/gocode"),
+			RepoURL:  (string)("https://github.com/nsf/gocode"),
 			Title:    (string)("PANIC!!! "),
 			Icon:     (notifications.OcticonID)("issue-opened"),
 			Color: (notifications.RGB)(notifications.RGB{
@@ -353,7 +353,7 @@ var ns = func() notifications.Notifications {
 				SiteAdmin: (bool)(false),
 			}),
 			UpdatedAt: (time.Time)(time.Date(1, 1, 1, 0, 0, 63621747822, 0, time.UTC).Add(passed)),
-			HTMLURL:   (template.URL)("https://github.com/nsf/gocode/issues/396#comment-277343192"),
+			HTMLURL:   (string)("https://github.com/nsf/gocode/issues/396#comment-277343192"),
 		}),
 		(notifications.Notification)(notifications.Notification{
 			AppID: (string)("Issue"),
@@ -361,7 +361,7 @@ var ns = func() notifications.Notifications {
 				URI: (string)("github.com/primer/octicons"),
 			}),
 			ThreadID: (uint64)(154),
-			RepoURL:  (template.URL)("https://github.com/primer/octicons"),
+			RepoURL:  (string)("https://github.com/primer/octicons"),
 			Title:    (string)("Please add more variants for refresh icon."),
 			Icon:     (notifications.OcticonID)("issue-closed"),
 			Color: (notifications.RGB)(notifications.RGB{
@@ -385,7 +385,7 @@ var ns = func() notifications.Notifications {
 				SiteAdmin: (bool)(false),
 			}),
 			UpdatedAt: (time.Time)(time.Date(1, 1, 1, 0, 0, 63621746110, 0, time.UTC).Add(passed)),
-			HTMLURL:   (template.URL)("https://github.com/primer/octicons/issues/154"),
+			HTMLURL:   (string)("https://github.com/primer/octicons/issues/154"),
 		}),
 		(notifications.Notification)(notifications.Notification{
 			AppID: (string)("Issue"),
@@ -393,7 +393,7 @@ var ns = func() notifications.Notifications {
 				URI: (string)("github.com/primer/octicons"),
 			}),
 			ThreadID: (uint64)(78),
-			RepoURL:  (template.URL)("https://github.com/primer/octicons"),
+			RepoURL:  (string)("https://github.com/primer/octicons"),
 			Title:    (string)("Add pause icon"),
 			Icon:     (notifications.OcticonID)("issue-closed"),
 			Color: (notifications.RGB)(notifications.RGB{
@@ -417,7 +417,7 @@ var ns = func() notifications.Notifications {
 				SiteAdmin: (bool)(false),
 			}),
 			UpdatedAt: (time.Time)(time.Date(1, 1, 1, 0, 0, 63621746061, 0, time.UTC).Add(passed)),
-			HTMLURL:   (template.URL)("https://github.com/primer/octicons/issues/78"),
+			HTMLURL:   (string)("https://github.com/primer/octicons/issues/78"),
 		}),
 		(notifications.Notification)(notifications.Notification{
 			AppID: (string)("Issue"),
@@ -425,7 +425,7 @@ var ns = func() notifications.Notifications {
 				URI: (string)("github.com/neelance/graphql-go"),
 			}),
 			ThreadID: (uint64)(53),
-			RepoURL:  (template.URL)("https://github.com/neelance/graphql-go"),
+			RepoURL:  (string)("https://github.com/neelance/graphql-go"),
 			Title:    (string)("Opentracing not tracing graphql traces"),
 			Icon:     (notifications.OcticonID)("issue-opened"),
 			Color: (notifications.RGB)(notifications.RGB{
@@ -449,7 +449,7 @@ var ns = func() notifications.Notifications {
 				SiteAdmin: (bool)(false),
 			}),
 			UpdatedAt: (time.Time)(time.Date(1, 1, 1, 0, 0, 63621743050, 0, time.UTC).Add(passed)),
-			HTMLURL:   (template.URL)("https://github.com/neelance/graphql-go/issues/53#comment-277322972"),
+			HTMLURL:   (string)("https://github.com/neelance/graphql-go/issues/53#comment-277322972"),
 		}),
 	})
 }()

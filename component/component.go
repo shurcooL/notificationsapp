@@ -57,7 +57,7 @@ func (a NotificationsByRepo) groupAndSort() []RepoNotifications {
 		case nil: // First notification for this RepoSpec.
 			rn := RepoNotifications{
 				Repo:          r,
-				RepoURL:       string(n.RepoURL),
+				RepoURL:       n.RepoURL,
 				Notifications: []Notification{{Notification: n}},
 				updatedAt:     n.UpdatedAt,
 			}
@@ -191,7 +191,7 @@ func (n Notification) Render() []*html.Node {
 		Attr: []html.Attribute{
 			{Key: atom.Class.String(), Val: "black"},
 			{Key: atom.Onclick.String(), Val: `MarkRead(this, '""', '""', 0);`},
-			{Key: atom.Href.String(), Val: string(n.HTMLURL)},
+			{Key: atom.Href.String(), Val: n.HTMLURL},
 		},
 	}
 	a.AppendChild(&html.Node{
