@@ -50,6 +50,10 @@ func MarkAllRead(el dom.HTMLElement, repoURI string) {
 
 // markRead marks the notification containing element el as read.
 func markRead(el dom.HTMLElement) {
+	// TODO: Re-render entire component.RepoNotifications so that mark-all-read button
+	//       disappears when last notification for repo is marked as read.
+	//       Get rid of "mark-as-read", replace with something for getting root of component.RepoNotifications
+	//       and find a good way to provide it with notifications data (needed to render component.RepoNotifications).
 	getAncestorByClassName(el, "mark-as-read").(dom.HTMLElement).Class().Add("read")
 }
 

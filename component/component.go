@@ -260,10 +260,10 @@ type Time struct {
 
 func (t Time) Render() []*html.Node {
 	// TODO: Make this much nicer.
-	// <abbr title="{{.Format "Jan _2, 2006, 3:04 PM MST"}}">{{reltime .}}</abbr>
+	// <abbr title="{{.Format "Jan 2, 2006, 3:04 PM MST"}}">{{reltime .}}</abbr>
 	abbr := &html.Node{
 		Type: html.ElementNode, Data: atom.Abbr.String(),
-		Attr:       []html.Attribute{{Key: atom.Title.String(), Val: t.Time.Format("Jan _2, 2006, 3:04 PM MST")}},
+		Attr:       []html.Attribute{{Key: atom.Title.String(), Val: t.Time.Format("Jan 2, 2006, 3:04 PM MST")}},
 		FirstChild: htmlg.Text(humanize.Time(t.Time)),
 	}
 	return []*html.Node{abbr}
