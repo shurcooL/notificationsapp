@@ -169,7 +169,7 @@ type Notification struct {
 func (n Notification) Render() []*html.Node {
 	// TODO: Make this much nicer.
 	/*
-		<div class="list-entry-body multilist-entry mark-as-read">
+		<div class="list-entry-body multilist-entry mark-as-read"{{if .Participating}} style="..."{{end}}>
 			<span class="content">
 				<table style="width: 100%;">
 				<tr>
@@ -246,6 +246,11 @@ func (n Notification) Render() []*html.Node {
 		divClass += " read"
 	}
 	div := htmlg.DivClass(divClass, span1, span2)
+	if n.Participating {
+		div.Attr = append(div.Attr, html.Attribute{
+			Key: atom.Style.String(), Val: "background-color: #fff9e6;",
+		})
+	}
 	return []*html.Node{div}
 }
 
