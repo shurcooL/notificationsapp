@@ -218,7 +218,7 @@ func (n Notification) Render() []*html.Node {
 			Attr: []html.Attribute{
 				{Key: atom.Class.String(), Val: "avatar fade-when-read"},
 				{Key: atom.Title.String(), Val: "@" + n.Actor.Login},
-				{Key: atom.Src.String(), Val: string(n.Actor.AvatarURL)},
+				{Key: atom.Src.String(), Val: n.Actor.AvatarURL},
 			},
 		})
 	}
