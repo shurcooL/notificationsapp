@@ -34,10 +34,10 @@ div.multilist-entry:not(:nth-child(0n+2)) {
 }
 
 .read .gray-when-read {
-	color: #888 !important;
+	color: #bbb !important;
 }
 .read .fade-when-read {
-	opacity: 0.6;
+	opacity: 0.25;
 }
 .read .hide-when-read {
 	visibility: hidden;
