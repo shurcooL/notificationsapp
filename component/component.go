@@ -126,7 +126,11 @@ func (r RepoNotifications) Render() []*html.Node {
 					{Key: atom.Class.String(), Val: "black"},
 					{Key: atom.Href.String(), Val: r.RepoURL},
 				},
-				FirstChild: htmlg.Strong(r.Repo.URI),
+				FirstChild: &html.Node{
+					Type: html.ElementNode, Data: atom.Strong.String(),
+					Attr:       []html.Attribute{{Key: atom.Class.String(), Val: "gray-when-read"}},
+					FirstChild: htmlg.Text(r.Repo.URI),
+				},
 			},
 		),
 		htmlg.SpanClass("right-icon hide-when-read",
