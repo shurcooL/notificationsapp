@@ -109,7 +109,7 @@ func (r RepoNotifications) Render() []*html.Node {
 	/*
 		<div class="list-entry list-entry-border mark-as-read">
 			<div class="list-entry-header">
-				<span class="content"><a class="black" href="{{.RepoURL}}"><strong>{{.Repo.URI}}</strong></a></span>
+				<span class="content"><a class="black gray-when-read" href="{{.RepoURL}}"><strong>{{.Repo.URI}}</strong></a></span>
 				<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkAllRead(this, {{.Repo.URI | json}});" title="Mark all {{base .Repo.URI}} notifications as read" style="display: inline-block;"><octiconssvg.Check()></span></a></span>
 			</div>
 			{{range .Notifications}}
@@ -123,12 +123,11 @@ func (r RepoNotifications) Render() []*html.Node {
 			&html.Node{
 				Type: html.ElementNode, Data: atom.A.String(),
 				Attr: []html.Attribute{
-					{Key: atom.Class.String(), Val: "black"},
+					{Key: atom.Class.String(), Val: "black gray-when-read"},
 					{Key: atom.Href.String(), Val: r.RepoURL},
 				},
 				FirstChild: &html.Node{
 					Type: html.ElementNode, Data: atom.Strong.String(),
-					Attr:       []html.Attribute{{Key: atom.Class.String(), Val: "gray-when-read"}},
 					FirstChild: htmlg.Text(r.Repo.URI),
 				},
 			},
@@ -175,9 +174,9 @@ func (n Notification) Render() []*html.Node {
 				<table style="width: 100%;">
 				<tr>
 				<td class="notification" style="width: 70%;">
-					<a class="black" onclick="MarkRead(this, {{`` | json}}, {{`` | json}}, 0);" href="{{.HTMLURL}}">
+					<a class="black gray-when-read" onclick="MarkRead(this, {{`` | json}}, {{`` | json}}, 0);" href="{{.HTMLURL}}">
 						<span class="fade-when-read" style="color: {{.Color.HexString}}; margin-right: 6px; vertical-align: top;"><octiconssvg.Icon(.Icon)></span>
-						<span class="gray-when-read">{{.Title}}</span>
+						{{.Title}}
 					</a>
 				</td>
 				<td>
@@ -193,7 +192,7 @@ func (n Notification) Render() []*html.Node {
 	a := &html.Node{
 		Type: html.ElementNode, Data: atom.A.String(),
 		Attr: []html.Attribute{
-			{Key: atom.Class.String(), Val: "black"},
+			{Key: atom.Class.String(), Val: "black gray-when-read"},
 			{Key: atom.Onclick.String(), Val: `MarkRead(this, '""', '""', 0);`},
 			{Key: atom.Href.String(), Val: n.HTMLURL},
 		},
@@ -206,13 +205,7 @@ func (n Notification) Render() []*html.Node {
 		},
 		FirstChild: octiconssvg.Icon(string(n.Icon)),
 	})
-	a.AppendChild(&html.Node{
-		Type: html.ElementNode, Data: atom.Span.String(),
-		Attr: []html.Attribute{
-			{Key: atom.Class.String(), Val: "gray-when-read"},
-		},
-		FirstChild: htmlg.Text(n.Title),
-	})
+	a.AppendChild(htmlg.Text(n.Title))
 	td1 := htmlg.TD(a)
 	td1.Attr = append(td1.Attr, html.Attribute{Key: atom.Style.String(), Val: "width: 70%;"})
 	td2 := htmlg.TD()
