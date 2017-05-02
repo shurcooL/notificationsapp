@@ -98,7 +98,9 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 
 	ns, err := h.ns.List(req.Context(), notifications.ListOptions{})
 	if os.IsPermission(err) {
-		http.Error(w, "403 Forbidden", http.StatusUnauthorized)
+		// HACK: os.IsPermission(err) could be 401 or 403, we don't know,
+		//       so just going with 403 for now. This should be cleaned up.
+		http.Error(w, "403 Forbidden", http.StatusForbidden)
 		return
 	} else if err != nil {
 		log.Println("h.ns.List:", err)
