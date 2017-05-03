@@ -1,22 +1,33 @@
 // +build js
 
+// script is the frontend script for notificationsapp.
 package main
 
 import (
 	"context"
 	"log"
+	"net/http"
 
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/shurcooL/go/gopherjs_http/jsutil"
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/httpclient"
+	"golang.org/x/oauth2"
 	"honnef.co/go/js/dom"
 )
 
+var document = dom.GetWindow().Document().(dom.HTMLDocument)
+
 func main() {
+	httpClient := httpClient()
+
+	notificationsService = httpclient.NewNotifications(httpClient, "", "")
+
 	js.Global.Set("MarkRead", jsutil.Wrap(MarkRead))
 	js.Global.Set("MarkAllRead", jsutil.Wrap(MarkAllRead))
 }
+
+var notificationsService notifications.Service
 
 func MarkRead(el dom.HTMLElement, appID string, repoURI string, threadID uint64) {
 	if appID == "" && repoURI == "" && threadID == 0 {
@@ -28,7 +39,7 @@ func MarkRead(el dom.HTMLElement, appID string, repoURI string, threadID uint64)
 	}
 
 	go func() {
-		err := httpclient.Notifications{}.MarkRead(context.Background(), appID, notifications.RepoSpec{URI: repoURI}, threadID)
+		err := notificationsService.MarkRead(context.Background(), appID, notifications.RepoSpec{URI: repoURI}, threadID)
 		if err != nil {
 			log.Println("MarkRead:", err)
 			return
@@ -39,7 +50,7 @@ func MarkRead(el dom.HTMLElement, appID string, repoURI string, threadID uint64)
 
 func MarkAllRead(el dom.HTMLElement, repoURI string) {
 	go func() {
-		err := httpclient.Notifications{}.MarkAllRead(context.Background(), notifications.RepoSpec{URI: repoURI})
+		err := notificationsService.MarkAllRead(context.Background(), notifications.RepoSpec{URI: repoURI})
 		if err != nil {
 			log.Println("MarkAllRead:", err)
 			return
@@ -61,4 +72,18 @@ func getAncestorByClassName(el dom.Element, class string) dom.Element {
 	for ; el != nil && !el.Class().Contains(class); el = el.ParentElement() {
 	}
 	return el
+}
+
+// httpClient gives an *http.Client for making API requests.
+func httpClient() *http.Client {
+	document := &http.Request{Header: http.Header{"Cookie": {document.Cookie()}}}
+	if accessToken, err := document.Cookie("accessToken"); err == nil {
+		// Authenticated client.
+		src := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: accessToken.Value},
+		)
+		return oauth2.NewClient(context.Background(), src)
+	}
+	// Not authenticated client.
+	return http.DefaultClient
 }
