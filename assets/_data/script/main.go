@@ -55,17 +55,27 @@ func MarkAllRead(el dom.HTMLElement, repoURI string) {
 			log.Println("MarkAllRead:", err)
 			return
 		}
-		markRead(el)
+		markAllRead(el)
 	}()
 }
 
 // markRead marks the notification containing element el as read.
 func markRead(el dom.HTMLElement) {
-	// TODO: Re-render entire component.RepoNotifications so that mark-all-read button
-	//       disappears when last notification for repo is marked as read.
-	//       Get rid of "mark-as-read", replace with something for getting root of component.RepoNotifications
-	//       and find a good way to provide it with notifications data (needed to render component.RepoNotifications).
+	// Mark this particular notification as read.
 	getAncestorByClassName(el, "mark-as-read").(dom.HTMLElement).Class().Add("read")
+
+	// If all notifications within the parent RepoNotifications are read by now,
+	// then mark entire RepoNotifications as read (to hide the "mark all read" button).
+	repo := getAncestorByClassName(el, "RepoNotifications")
+	if len(repo.QuerySelectorAll(".read")) == len(repo.QuerySelectorAll(".mark-as-read")) {
+		repo.(dom.HTMLElement).Class().Add("read")
+	}
+}
+
+// markAllRead marks all notifications in RepoNotifications containing element el as read.
+func markAllRead(el dom.HTMLElement) {
+	repo := getAncestorByClassName(el, "RepoNotifications")
+	repo.(dom.HTMLElement).Class().Add("read")
 }
 
 func getAncestorByClassName(el dom.Element, class string) dom.Element {

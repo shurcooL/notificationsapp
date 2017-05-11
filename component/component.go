@@ -107,7 +107,7 @@ type RepoNotifications struct {
 func (r RepoNotifications) Render() []*html.Node {
 	// TODO: Make this much nicer.
 	/*
-		<div class="list-entry list-entry-border mark-as-read">
+		<div class="RepoNotifications list-entry list-entry-border mark-as-read">
 			<div class="list-entry-header">
 				<span class="content"><a class="black gray-when-read" href="{{.RepoURL}}"><strong>{{.Repo.URI}}</strong></a></span>
 				<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkAllRead(this, {{.Repo.URI | json}});" title="Mark all {{base .Repo.URI}} notifications as read" style="display: inline-block;"><octiconssvg.Check()></span></a></span>
@@ -152,7 +152,7 @@ func (r RepoNotifications) Render() []*html.Node {
 		}
 		ns = append(ns, notification.Render()...)
 	}
-	divClass := "list-entry list-entry-border mark-as-read"
+	divClass := "RepoNotifications list-entry list-entry-border mark-as-read"
 	if !anyUnread {
 		divClass += " read"
 	}

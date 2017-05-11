@@ -118,11 +118,13 @@ func (mockNotifications) Count(ctx context.Context, opt interface{}) (uint64, er
 
 func (mockNotifications) MarkRead(ctx context.Context, appID string, repo notifications.RepoSpec, threadID uint64) error {
 	// TODO: Perhaps have it modify what List returns, etc.
+	fmt.Println("MarkRead:", repo.URI, appID, threadID)
 	return nil
 }
 
 func (mockNotifications) MarkAllRead(ctx context.Context, repo notifications.RepoSpec) error {
 	// TODO: Perhaps have it modify what List returns, etc.
+	fmt.Println("MarkAllRead:", repo.URI)
 	return nil
 }
 
