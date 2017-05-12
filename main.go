@@ -96,17 +96,6 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	ns, err := h.ns.List(req.Context(), notifications.ListOptions{})
-	if os.IsPermission(err) {
-		// HACK: os.IsPermission(err) could be 401 or 403, we don't know,
-		//       so just going with 403 for now. This should be cleaned up.
-		http.Error(w, "403 Forbidden", http.StatusForbidden)
-		return
-	} else if err != nil {
-		log.Println("h.ns.List:", err)
-		return
-	}
-
 	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
 	//       subtracting BaseURI from full original req.URL.Path. We should be able
 	//       to compute it here internally by using req.RequestURI and BaseURI.
@@ -117,10 +106,24 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	ns, err := h.ns.List(req.Context(), notifications.ListOptions{})
+	if os.IsPermission(err) {
+		// HACK: os.IsPermission(err) could be 401 or 403, we don't know,
+		//       so just going with 403 for now. This should be cleaned up.
+		http.Error(w, "403 Forbidden", http.StatusForbidden)
+		return
+	} else if err != nil {
+		log.Println("h.ns.List:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	state := struct {
 		BaseURI string
 		HeadPre template.HTML
-		BodyPre template.HTML
+		BodyPre template.HTML // E.g., <div style="max-width: 800px; margin: 0 auto 100px auto;">.
 	}{
 		baseURI,
 		h.opt.HeadPre,
@@ -132,6 +135,7 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	// E.g., a header component.
 	if h.opt.BodyTop != nil {
 		c, err := h.opt.BodyTop(req)
 		if err != nil {
@@ -145,6 +149,7 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		}
 	}
 
+	// Render the notifications contents.
 	err = htmlg.RenderComponents(w, component.NotificationsByRepo{Notifications: ns})
 	if err != nil {
 		log.Println("htmlg.RenderComponents:", err)
