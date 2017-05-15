@@ -31,6 +31,17 @@ When you're done with development, you should run `go generate` and commit that:
 go generate github.com/shurcooL/notificationsapp/...
 ```
 
+Directories
+-----------
+
+| Path                                                                              | Synopsis                                                                             |
+|-----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| [assets](https://godoc.org/github.com/shurcooL/notificationsapp/assets)           | Package assets contains assets for notificationsapp.                                 |
+| [component](https://godoc.org/github.com/shurcooL/notificationsapp/component)     | Package component contains individual components that can render themselves as HTML. |
+| [httpclient](https://godoc.org/github.com/shurcooL/notificationsapp/httpclient)   | Package httpclient contains notifications.Service implementation over HTTP.          |
+| [httphandler](https://godoc.org/github.com/shurcooL/notificationsapp/httphandler) | Package httphandler contains an API handler for notifications.Service.               |
+| [httproute](https://godoc.org/github.com/shurcooL/notificationsapp/httproute)     | Package httproute contains route paths for httpclient, httphandler.                  |
+
 License
 -------
 
