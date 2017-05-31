@@ -36,6 +36,13 @@ func run() error {
 	users := mockUsers{}
 	service := mockNotifications{}
 
+	// Register HTTP API endpoints.
+	apiHandler := httphandler.Notifications{Notifications: service}
+	http.Handle(httproute.List, httputil.ErrorHandler(users, apiHandler.List))
+	http.Handle(httproute.Count, httputil.ErrorHandler(users, apiHandler.Count))
+	http.Handle(httproute.MarkRead, httputil.ErrorHandler(users, apiHandler.MarkRead))
+	http.Handle(httproute.MarkAllRead, httputil.ErrorHandler(users, apiHandler.MarkAllRead))
+
 	opt := notificationsapp.Options{
 		HeadPre: `<title>Notifications</title>
 <style type="text/css">
@@ -57,13 +64,6 @@ func run() error {
 		req = req.WithContext(context.WithValue(req.Context(), notificationsapp.BaseURIContextKey, ".")) // TODO: Confirm "." vs "/" vs "".
 		notificationsApp.ServeHTTP(w, req)
 	})
-
-	// Register HTTP API endpoints.
-	apiHandler := httphandler.Notifications{Notifications: service}
-	http.Handle(httproute.List, httputil.ErrorHandler(users, apiHandler.List))
-	http.Handle(httproute.Count, httputil.ErrorHandler(users, apiHandler.Count))
-	http.Handle(httproute.MarkRead, httputil.ErrorHandler(users, apiHandler.MarkRead))
-	http.Handle(httproute.MarkAllRead, httputil.ErrorHandler(users, apiHandler.MarkAllRead))
 
 	log.Println("Started.")
 
