@@ -27,6 +27,22 @@ func main() {
 	js.Global.Set("MarkAllRead", jsutil.Wrap(MarkAllRead))
 }
 
+// httpClient gives an *http.Client for making API requests.
+func httpClient() *http.Client {
+	cookies := &http.Request{Header: http.Header{"Cookie": {document.Cookie()}}}
+	if accessToken, err := cookies.Cookie("accessToken"); err == nil {
+		// Authenticated client.
+		src := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: accessToken.Value},
+		)
+		return oauth2.NewClient(context.Background(), src)
+	}
+	// Not authenticated client.
+	return http.DefaultClient
+}
+
+// TODO: Get rid of this global variable.
+//       See https://dmitri.shuralyov.com/blog/19.
 var notificationsService notifications.Service
 
 func MarkRead(el dom.HTMLElement, appID string, repoURI string, threadID uint64) {
@@ -82,18 +98,4 @@ func getAncestorByClassName(el dom.Element, class string) dom.Element {
 	for ; el != nil && !el.Class().Contains(class); el = el.ParentElement() {
 	}
 	return el
-}
-
-// httpClient gives an *http.Client for making API requests.
-func httpClient() *http.Client {
-	document := &http.Request{Header: http.Header{"Cookie": {document.Cookie()}}}
-	if accessToken, err := document.Cookie("accessToken"); err == nil {
-		// Authenticated client.
-		src := oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: accessToken.Value},
-		)
-		return oauth2.NewClient(context.Background(), src)
-	}
-	// Not authenticated client.
-	return http.DefaultClient
 }
