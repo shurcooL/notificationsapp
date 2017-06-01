@@ -27,11 +27,12 @@ func (a NotificationsByRepo) Render() []*html.Node {
 		{{if .}}{{range .}}
 			{{render .}}
 		{{end}}{{else}}
-			<div style="text-align: center; margin-top: 80px; margin-bottom: 80px;">No new notifications.</div>
+			<div class="list-entry-border">
+				<div style="text-align: center; margin-top: 80px; margin-bottom: 80px;">No new notifications.</div>
+			</div>
 		{{end}}
 	*/
 	if len(a.Notifications) == 0 {
-		// TODO: Maybe use blankslate Primer CSS component?
 		div := &html.Node{
 			Type: html.ElementNode, Data: atom.Div.String(),
 			Attr: []html.Attribute{
@@ -39,7 +40,7 @@ func (a NotificationsByRepo) Render() []*html.Node {
 			},
 			FirstChild: htmlg.Text("No new notifications."),
 		}
-		return []*html.Node{div}
+		return []*html.Node{htmlg.DivClass("list-entry-border", div)}
 	}
 
 	var ns []*html.Node
