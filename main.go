@@ -31,6 +31,7 @@ func (k *contextKey) String() string {
 // The associated value will be of type string.
 var BaseURIContextKey = &contextKey{"BaseURI"}
 
+// Options for configuring notifications app.
 type Options struct {
 	HeadPre template.HTML
 	BodyPre template.HTML

@@ -1,6 +1,7 @@
 // Package httproute contains route paths for httpclient, httphandler.
 package httproute
 
+// Route paths.
 const (
 	List        = "/api/notifications/list"
 	Count       = "/api/notifications/count"
