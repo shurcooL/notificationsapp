@@ -50,7 +50,7 @@ func run() error {
 		margin: 20px;
 	}
 	body, table {
-		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+		font-family: sans-serif;
 		font-size: 14px;
 		line-height: initial;
 		color: #373a3c;
