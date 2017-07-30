@@ -16,38 +16,6 @@ import (
 	"github.com/shurcooL/notificationsapp/component"
 )
 
-// contextKey is a value for use with context.WithValue. It's used as
-// a pointer so it fits in an interface{} without allocation.
-type contextKey struct {
-	name string
-}
-
-func (k *contextKey) String() string {
-	return "github.com/shurcooL/notificationsapp context value " + k.name
-}
-
-// BaseURIContextKey is a context key for the request's base URI.
-// That value specifies the base URI prefix to use for all absolute URLs.
-// The associated value will be of type string.
-var BaseURIContextKey = &contextKey{"BaseURI"}
-
-// Options for configuring notifications app.
-type Options struct {
-	HeadPre template.HTML
-	BodyPre template.HTML
-
-	// BodyTop provides components to include on top of <body> of page rendered for req. It can be nil.
-	BodyTop func(req *http.Request) ([]htmlg.Component, error)
-}
-
-type handler struct {
-	http.Handler
-
-	ns notifications.Service
-
-	opt Options
-}
-
 // New returns a notifications app http.Handler using given services and options.
 //
 // In order to serve HTTP requests, the returned http.Handler expects each incoming
@@ -80,6 +48,38 @@ func New(service notifications.Service, opt Options) http.Handler {
 
 	handler.Handler = mux
 	return handler
+}
+
+type handler struct {
+	http.Handler
+
+	ns notifications.Service
+
+	opt Options
+}
+
+// Options for configuring notifications app.
+type Options struct {
+	HeadPre template.HTML
+	BodyPre template.HTML
+
+	// BodyTop provides components to include on top of <body> of page rendered for req. It can be nil.
+	BodyTop func(req *http.Request) ([]htmlg.Component, error)
+}
+
+// BaseURIContextKey is a context key for the request's base URI.
+// That value specifies the base URI prefix to use for all absolute URLs.
+// The associated value will be of type string.
+var BaseURIContextKey = &contextKey{"BaseURI"}
+
+// contextKey is a value for use with context.WithValue. It's used as
+// a pointer so it fits in an interface{} without allocation.
+type contextKey struct {
+	name string
+}
+
+func (k *contextKey) String() string {
+	return "github.com/shurcooL/notificationsapp context value " + k.name
 }
 
 var notificationsHTML = template.Must(template.New("").Parse(`<html>
