@@ -92,11 +92,14 @@ var notificationsHTML = template.Must(template.New("").Parse(`<html>
 		{{.BodyPre}}`))
 
 func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request) {
+	if req.URL.Path != "/" {
+		http.Error(w, "404 Not Found", http.StatusNotFound)
+		return
+	}
 	if req.Method != "GET" {
 		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"GET"}})
 		return
 	}
-	// TODO: Handle non-"/" requests as 404 Not Found.
 
 	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
 	//       subtracting BaseURI from full original req.URL.Path. We should be able
