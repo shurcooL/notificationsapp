@@ -44,7 +44,7 @@ func New(service notifications.Service, opt Options) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handler.NotificationsHandler)
 	assetsFileServer := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed})
-	mux.Handle("/assets/", assetsFileServer)
+	mux.Handle("/assets/", http.StripPrefix("/assets", assetsFileServer))
 
 	handler.Handler = mux
 	return handler
@@ -86,7 +86,7 @@ var notificationsHTML = template.Must(template.New("").Parse(`<html>
 	<head>
 		{{.HeadPre}}
 		<link href="{{.BaseURI}}/assets/style.css" rel="stylesheet" type="text/css" />
-		<script src="{{.BaseURI}}/assets/script/script.js" type="text/javascript"></script>
+		<script src="{{.BaseURI}}/assets/script.js" type="text/javascript"></script>
 	</head>
 	<body>
 		{{.BodyPre}}`))
@@ -96,6 +96,7 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"GET"}})
 		return
 	}
+	// TODO: Handle non-"/" requests as 404 Not Found.
 
 	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
 	//       subtracting BaseURI from full original req.URL.Path. We should be able

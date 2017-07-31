@@ -38,6 +38,7 @@ Directories
 |-----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
 | [assets](https://godoc.org/github.com/shurcooL/notificationsapp/assets)           | Package assets contains assets for notificationsapp.                                 |
 | [component](https://godoc.org/github.com/shurcooL/notificationsapp/component)     | Package component contains individual components that can render themselves as HTML. |
+| [frontend](https://godoc.org/github.com/shurcooL/notificationsapp/frontend)       | frontend script for notificationsapp.                                                |
 | [httpclient](https://godoc.org/github.com/shurcooL/notificationsapp/httpclient)   | Package httpclient contains notifications.Service implementation over HTTP.          |
 | [httphandler](https://godoc.org/github.com/shurcooL/notificationsapp/httphandler) | Package httphandler contains an API handler for notifications.Service.               |
 | [httproute](https://godoc.org/github.com/shurcooL/notificationsapp/httproute)     | Package httproute contains route paths for httpclient, httphandler.                  |

@@ -1,6 +1,7 @@
-// +build js
-
-// script is the frontend script for notificationsapp.
+// frontend script for notificationsapp.
+//
+// It's a Go package meant to be compiled with GOARCH=js
+// and executed in a browser, where the DOM is available.
 package main
 
 import (
