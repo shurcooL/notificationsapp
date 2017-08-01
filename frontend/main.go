@@ -22,10 +22,10 @@ var document = dom.GetWindow().Document().(dom.HTMLDocument)
 func main() {
 	httpClient := httpClient()
 
-	notificationsService = httpclient.NewNotifications(httpClient, "", "")
+	f := frontend{ns: httpclient.NewNotifications(httpClient, "", "")}
 
-	js.Global.Set("MarkRead", jsutil.Wrap(MarkRead))
-	js.Global.Set("MarkAllRead", jsutil.Wrap(MarkAllRead))
+	js.Global.Set("MarkRead", jsutil.Wrap(f.MarkRead))
+	js.Global.Set("MarkAllRead", jsutil.Wrap(f.MarkAllRead))
 }
 
 // httpClient gives an *http.Client for making API requests.
@@ -42,11 +42,11 @@ func httpClient() *http.Client {
 	return http.DefaultClient
 }
 
-// TODO: Get rid of this global variable.
-//       See https://dmitri.shuralyov.com/blog/19.
-var notificationsService notifications.Service
+type frontend struct {
+	ns notifications.Service
+}
 
-func MarkRead(el dom.HTMLElement, appID string, repoURI string, threadID uint64) {
+func (f frontend) MarkRead(el dom.HTMLElement, appID string, repoURI string, threadID uint64) {
 	if appID == "" && repoURI == "" && threadID == 0 {
 		// When user clicks on the notification link, don't perform mark read operation
 		// ourselves, it's expected to be done externally by the service that displays
@@ -56,7 +56,7 @@ func MarkRead(el dom.HTMLElement, appID string, repoURI string, threadID uint64)
 	}
 
 	go func() {
-		err := notificationsService.MarkRead(context.Background(), appID, notifications.RepoSpec{URI: repoURI}, threadID)
+		err := f.ns.MarkRead(context.Background(), appID, notifications.RepoSpec{URI: repoURI}, threadID)
 		if err != nil {
 			log.Println("MarkRead:", err)
 			return
@@ -65,9 +65,9 @@ func MarkRead(el dom.HTMLElement, appID string, repoURI string, threadID uint64)
 	}()
 }
 
-func MarkAllRead(el dom.HTMLElement, repoURI string) {
+func (f frontend) MarkAllRead(el dom.HTMLElement, repoURI string) {
 	go func() {
-		err := notificationsService.MarkAllRead(context.Background(), notifications.RepoSpec{URI: repoURI})
+		err := f.ns.MarkAllRead(context.Background(), notifications.RepoSpec{URI: repoURI})
 		if err != nil {
 			log.Println("MarkAllRead:", err)
 			return
