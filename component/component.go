@@ -165,7 +165,6 @@ func (r RepoNotifications) Render() []*html.Node {
 // Notification component for display purposes.
 type Notification struct {
 	notifications.Notification
-	Read bool
 }
 
 func (n Notification) Render() []*html.Node {

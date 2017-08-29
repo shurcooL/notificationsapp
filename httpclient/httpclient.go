@@ -38,6 +38,9 @@ func (n *notificationsClient) List(ctx context.Context, opt notifications.ListOp
 	v := url.Values{} // TODO: Automate this conversion process.
 	if opt.Repo != nil {
 		v.Set("RepoURI", opt.Repo.URI)
+		if opt.All {
+			v.Set("All", "1")
+		}
 	}
 	u := url.URL{
 		Path:     httproute.List,

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/shurcooL/htmlg"
 	"github.com/shurcooL/httperror"
@@ -112,7 +113,10 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	ns, err := h.ns.List(req.Context(), notifications.ListOptions{})
+	all, _ := strconv.ParseBool(req.URL.Query().Get("all"))
+	ns, err := h.ns.List(req.Context(), notifications.ListOptions{
+		All: all,
+	})
 	if os.IsPermission(err) {
 		// HACK: os.IsPermission(err) could be 401 or 403, we don't know,
 		//       so just going with 403 for now. This should be cleaned up.

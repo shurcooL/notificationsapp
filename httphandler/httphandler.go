@@ -27,6 +27,7 @@ func (h Notifications) List(w http.ResponseWriter, req *http.Request) error {
 		}
 		opt.Repo = &notifications.RepoSpec{URI: repoURI[0]}
 	}
+	opt.All, _ = strconv.ParseBool(req.URL.Query().Get("All"))
 	ns, err := h.Notifications.List(req.Context(), opt)
 	if err != nil {
 		return err
