@@ -6,8 +6,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/shurcooL/htmlg"
 	"github.com/shurcooL/httperror"
@@ -37,26 +39,39 @@ import (
 // 	http.Handle(httproute.MarkRead, errorHandler(apiHandler.MarkRead))
 // 	http.Handle(httproute.MarkAllRead, errorHandler(apiHandler.MarkAllRead))
 func New(service notifications.Service, opt Options) http.Handler {
-	handler := &handler{
-		ns:  service,
-		opt: opt,
+	return &handler{
+		ns:               service,
+		assetsFileServer: httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed}),
+		opt:              opt,
 	}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", handler.NotificationsHandler)
-	assetsFileServer := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed})
-	mux.Handle("/assets/", http.StripPrefix("/assets", assetsFileServer))
-
-	handler.Handler = mux
-	return handler
 }
 
+// handler handles all requests to notificationsapp. It acts
+// like a request multiplexer, choosing from various endpoints.
 type handler struct {
-	http.Handler
-
 	ns notifications.Service
 
+	assetsFileServer http.Handler
+
 	opt Options
+}
+
+func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// Handle "/assets/...".
+	if strings.HasPrefix(req.URL.Path, "/assets/") {
+		req = stripPrefix(req, len("/assets"))
+		h.assetsFileServer.ServeHTTP(w, req)
+		return
+	}
+
+	// Handle all other non-"/".
+	if req.URL.Path != "/" {
+		http.Error(w, "404 Not Found", http.StatusNotFound)
+		return
+	}
+
+	// Handle "/".
+	h.NotificationsHandler(w, req)
 }
 
 // Options for configuring notifications app.
@@ -93,10 +108,6 @@ var notificationsHTML = template.Must(template.New("").Parse(`<html>
 		{{.BodyPre}}`))
 
 func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request) {
-	if req.URL.Path != "/" {
-		http.Error(w, "404 Not Found", http.StatusNotFound)
-		return
-	}
 	if req.Method != "GET" {
 		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"GET"}})
 		return
@@ -170,4 +181,19 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		log.Println("io.WriteString:", err)
 		return
 	}
+}
+
+// stripPrefix returns request r with prefix of length prefixLen stripped from r.URL.Path.
+// prefixLen must not be longer than len(r.URL.Path), otherwise stripPrefix panics.
+// If r.URL.Path is empty after the prefix is stripped, the path is changed to "/".
+func stripPrefix(r *http.Request, prefixLen int) *http.Request {
+	r2 := new(http.Request)
+	*r2 = *r
+	r2.URL = new(url.URL)
+	*r2.URL = *r.URL
+	r2.URL.Path = r.URL.Path[prefixLen:]
+	if r2.URL.Path == "" {
+		r2.URL.Path = "/"
+	}
+	return r2
 }
