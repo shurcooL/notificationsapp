@@ -1,13 +1,12 @@
 package notificationsapp
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/assets"
 	"github.com/shurcooL/notificationsapp/component"
+	"github.com/shurcooL/users"
 )
 
 // New returns a notifications app http.Handler using given services and options.
@@ -38,11 +38,15 @@ import (
 // 	apiHandler := httphandler.Notifications{Notifications: service}
 // 	http.Handle(httproute.MarkRead, errorHandler(apiHandler.MarkRead))
 // 	http.Handle(httproute.MarkAllRead, errorHandler(apiHandler.MarkAllRead))
-func New(service notifications.Service, opt Options) http.Handler {
-	return &handler{
+func New(service notifications.Service, users users.Service, opt Options) http.Handler {
+	h := handler{
 		ns:               service,
 		assetsFileServer: httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{ServeError: httpgzip.Detailed}),
 		opt:              opt,
+	}
+	return &errorHandler{
+		handler: h.ServeHTTP,
+		users:   users,
 	}
 }
 
@@ -56,22 +60,21 @@ type handler struct {
 	opt Options
 }
 
-func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) error {
 	// Handle "/assets/...".
 	if strings.HasPrefix(req.URL.Path, "/assets/") {
 		req = stripPrefix(req, len("/assets"))
 		h.assetsFileServer.ServeHTTP(w, req)
-		return
+		return nil
 	}
 
 	// Handle all other non-"/".
 	if req.URL.Path != "/" {
-		http.Error(w, "404 Not Found", http.StatusNotFound)
-		return
+		return httperror.HTTP{Code: http.StatusNotFound, Err: errors.New("no route")}
 	}
 
 	// Handle "/".
-	h.NotificationsHandler(w, req)
+	return h.NotificationsHandler(w, req)
 }
 
 // Options for configuring notifications app.
@@ -107,10 +110,9 @@ var notificationsHTML = template.Must(template.New("").Parse(`<html>
 	<body>
 		{{.BodyPre}}`))
 
-func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request) {
+func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request) error {
 	if req.Method != "GET" {
-		httperror.HandleMethod(w, httperror.Method{Allowed: []string{"GET"}})
-		return
+		return httperror.Method{Allowed: []string{"GET"}}
 	}
 
 	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
@@ -118,25 +120,15 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 	//       to compute it here internally by using req.RequestURI and BaseURI.
 	baseURI, ok := req.Context().Value(BaseURIContextKey).(string)
 	if !ok {
-		err := fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
 	}
 
 	all, _ := strconv.ParseBool(req.URL.Query().Get("all"))
 	ns, err := h.ns.List(req.Context(), notifications.ListOptions{
 		All: all,
 	})
-	if os.IsPermission(err) {
-		// HACK: os.IsPermission(err) could be 401 or 403, we don't know,
-		//       so just going with 403 for now. This should be cleaned up.
-		http.Error(w, "403 Forbidden", http.StatusForbidden)
-		return
-	} else if err != nil {
-		log.Println("h.ns.List:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if err != nil {
+		return err
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -151,36 +143,32 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 	}
 	err = notificationsHTML.Execute(w, &state)
 	if err != nil {
-		log.Println("notificationsHTML.ExecuteTemplate:", err)
-		return
+		return fmt.Errorf("notificationsHTML.Execute: %v", err)
 	}
 
 	// E.g., a header component.
 	if h.opt.BodyTop != nil {
 		c, err := h.opt.BodyTop(req)
 		if err != nil {
-			log.Println("h.opt.BodyTop:", err)
-			return
+			return err
 		}
 		err = htmlg.RenderComponents(w, c...)
 		if err != nil {
-			log.Println("htmlg.RenderComponents:", err)
-			return
+			return fmt.Errorf("htmlg.RenderComponents: %v", err)
 		}
 	}
 
 	// Render the notifications contents.
 	err = htmlg.RenderComponents(w, component.NotificationsByRepo{Notifications: ns})
 	if err != nil {
-		log.Println("htmlg.RenderComponents:", err)
-		return
+		return fmt.Errorf("htmlg.RenderComponents: %v", err)
 	}
 
 	_, err = io.WriteString(w, `</body></html>`)
 	if err != nil {
-		log.Println("io.WriteString:", err)
-		return
+		return fmt.Errorf("io.WriteString: %v", err)
 	}
+	return nil
 }
 
 // stripPrefix returns request r with prefix of length prefixLen stripped from r.URL.Path.

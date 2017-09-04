@@ -58,7 +58,7 @@ func run() error {
 </style>`,
 	}
 	opt.BodyPre = `<div style="max-width: 800px; margin: 0 auto 100px auto;">`
-	notificationsApp := notificationsapp.New(service, opt)
+	notificationsApp := notificationsapp.New(service, users, opt)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		req = req.WithContext(context.WithValue(req.Context(), notificationsapp.BaseURIContextKey, ".")) // TODO: Confirm "." vs "/" vs "".
