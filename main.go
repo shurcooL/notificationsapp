@@ -61,6 +61,13 @@ type handler struct {
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) error {
+	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
+	//       subtracting BaseURI from full original req.URL.Path. We should be able
+	//       to compute it here internally by using req.RequestURI and BaseURI.
+	if _, ok := req.Context().Value(BaseURIContextKey).(string); !ok {
+		return fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
+	}
+
 	// Handle "/assets/...".
 	if strings.HasPrefix(req.URL.Path, "/assets/") {
 		req = stripPrefix(req, len("/assets"))
@@ -115,14 +122,6 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		return httperror.Method{Allowed: []string{"GET"}}
 	}
 
-	// TODO: Caller still does a lot of work outside to calculate req.URL.Path by
-	//       subtracting BaseURI from full original req.URL.Path. We should be able
-	//       to compute it here internally by using req.RequestURI and BaseURI.
-	baseURI, ok := req.Context().Value(BaseURIContextKey).(string)
-	if !ok {
-		return fmt.Errorf("request to %v doesn't have notificationsapp.BaseURIContextKey context key set", req.URL.Path)
-	}
-
 	all, _ := strconv.ParseBool(req.URL.Query().Get("all"))
 	ns, err := h.ns.List(req.Context(), notifications.ListOptions{
 		All: all,
@@ -137,7 +136,7 @@ func (h *handler) NotificationsHandler(w http.ResponseWriter, req *http.Request)
 		HeadPre template.HTML
 		BodyPre template.HTML // E.g., <div style="max-width: 800px; margin: 0 auto 100px auto;">.
 	}{
-		baseURI,
+		req.Context().Value(BaseURIContextKey).(string),
 		h.opt.HeadPre,
 		h.opt.BodyPre,
 	}
