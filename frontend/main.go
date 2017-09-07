@@ -46,8 +46,8 @@ type frontend struct {
 	ns notifications.Service
 }
 
-func (f frontend) MarkRead(el dom.HTMLElement, appID string, repoURI string, threadID uint64) {
-	if appID == "" && repoURI == "" && threadID == 0 {
+func (f frontend) MarkRead(el dom.HTMLElement, repoURI string, threadType string, threadID uint64) {
+	if repoURI == "" && threadType == "" && threadID == 0 {
 		// When user clicks on the notification link, don't perform mark read operation
 		// ourselves, it's expected to be done externally by the service that displays
 		// the notification to the user views. Just make it appear as read, and return.
@@ -56,7 +56,7 @@ func (f frontend) MarkRead(el dom.HTMLElement, appID string, repoURI string, thr
 	}
 
 	go func() {
-		err := f.ns.MarkRead(context.Background(), appID, notifications.RepoSpec{URI: repoURI}, threadID)
+		err := f.ns.MarkRead(context.Background(), notifications.RepoSpec{URI: repoURI}, threadType, threadID)
 		if err != nil {
 			log.Println("MarkRead:", err)
 			return

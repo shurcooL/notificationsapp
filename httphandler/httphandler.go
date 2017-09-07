@@ -51,13 +51,13 @@ func (h Notifications) MarkRead(w http.ResponseWriter, req *http.Request) error 
 		return httperror.Method{Allowed: []string{"POST"}}
 	}
 	q := req.URL.Query() // TODO: Automate this conversion process.
-	appID := q.Get("AppID")
 	repo := notifications.RepoSpec{URI: q.Get("RepoURI")}
+	threadType := q.Get("ThreadType")
 	threadID, err := strconv.ParseUint(q.Get("ThreadID"), 10, 64)
 	if err != nil {
 		return httperror.BadRequest{Err: fmt.Errorf("parsing ThreadID query parameter: %v", err)}
 	}
-	err = h.Notifications.MarkRead(req.Context(), appID, repo, threadID)
+	err = h.Notifications.MarkRead(req.Context(), repo, threadType, threadID)
 	return err
 }
 

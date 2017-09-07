@@ -75,13 +75,13 @@ func (n *notificationsClient) Count(ctx context.Context, opt interface{}) (uint6
 	return u, err
 }
 
-func (n *notificationsClient) MarkRead(ctx context.Context, appID string, repo notifications.RepoSpec, threadID uint64) error {
+func (n *notificationsClient) MarkRead(ctx context.Context, repo notifications.RepoSpec, threadType string, threadID uint64) error {
 	u := url.URL{
 		Path: httproute.MarkRead,
 		RawQuery: url.Values{
-			"AppID":    {appID},
-			"RepoURI":  {repo.URI},
-			"ThreadID": {fmt.Sprint(threadID)},
+			"RepoURI":    {repo.URI},
+			"ThreadType": {threadType},
+			"ThreadID":   {fmt.Sprint(threadID)},
 		}.Encode(),
 	}
 	resp, err := ctxhttp.Post(ctx, n.client, n.baseURL.ResolveReference(&u).String(), "", nil)
@@ -115,10 +115,10 @@ func (n *notificationsClient) MarkAllRead(ctx context.Context, repo notification
 	return nil
 }
 
-func (notificationsClient) Subscribe(_ context.Context, appID string, repo notifications.RepoSpec, threadID uint64, subscribers []users.UserSpec) error {
+func (notificationsClient) Subscribe(_ context.Context, repo notifications.RepoSpec, threadType string, threadID uint64, subscribers []users.UserSpec) error {
 	return fmt.Errorf("Subscribe: not implemented")
 }
 
-func (notificationsClient) Notify(_ context.Context, appID string, repo notifications.RepoSpec, threadID uint64, nr notifications.NotificationRequest) error {
+func (notificationsClient) Notify(_ context.Context, repo notifications.RepoSpec, threadType string, threadID uint64, nr notifications.NotificationRequest) error {
 	return fmt.Errorf("Notify: not implemented")
 }

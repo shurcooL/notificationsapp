@@ -59,7 +59,6 @@ func (a NotificationsByRepo) groupAndSort() []RepoNotifications {
 		case nil: // First notification for this RepoSpec.
 			rn := RepoNotifications{
 				Repo:          r,
-				RepoURL:       n.RepoURL,
 				Notifications: []Notification{{Notification: n}},
 				updatedAt:     n.UpdatedAt,
 			}
@@ -100,7 +99,6 @@ func (s nByUpdatedAt) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 // RepoNotifications component is a collection of notifications for the same repo.
 type RepoNotifications struct {
 	Repo          notifications.RepoSpec
-	RepoURL       string
 	Notifications []Notification
 
 	updatedAt time.Time // Most recent notification. Used only by NotificationsByRepo.groupAndSort.
@@ -111,7 +109,7 @@ func (r RepoNotifications) Render() []*html.Node {
 	/*
 		<div class="RepoNotifications list-entry list-entry-border mark-as-read">
 			<div class="list-entry-header">
-				<span class="content"><a class="black gray-when-read" href="{{.RepoURL}}"><strong>{{.Repo.URI}}</strong></a></span>
+				<span class="content"><a class="black gray-when-read" href="https://{{.Repo.URI}}"><strong>{{.Repo.URI}}</strong></a></span>
 				<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkAllRead(this, {{.Repo.URI | json}});" title="Mark all {{base .Repo.URI}} notifications as read" style="display: inline-block;"><octiconssvg.Check()></span></a></span>
 			</div>
 			{{range .Notifications}}
@@ -126,7 +124,7 @@ func (r RepoNotifications) Render() []*html.Node {
 				Type: html.ElementNode, Data: atom.A.String(),
 				Attr: []html.Attribute{
 					{Key: atom.Class.String(), Val: "black gray-when-read"},
-					{Key: atom.Href.String(), Val: r.RepoURL},
+					{Key: atom.Href.String(), Val: "https://" + r.Repo.URI},
 				},
 				FirstChild: &html.Node{
 					Type: html.ElementNode, Data: atom.Strong.String(),
@@ -187,7 +185,7 @@ func (n Notification) Render() []*html.Node {
 				</tr>
 				</table>
 			</span>
-			<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkRead(this, {{.AppID | json}}, {{.RepoSpec.URI | json}}, {{.ThreadID}});" title="Mark as read" style="display: inline-block;"><octiconssvg.Check()>"</a></span>
+			<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkRead(this, {{.RepoSpec.URI | json}}, {{.ThreadType | json}}, {{.ThreadID}});" title="Mark as read" style="display: inline-block;"><octiconssvg.Check()>"</a></span>
 		</div>
 	*/
 	a := &html.Node{
@@ -235,7 +233,7 @@ func (n Notification) Render() []*html.Node {
 			Type: html.ElementNode, Data: atom.A.String(),
 			Attr: []html.Attribute{
 				{Key: atom.Href.String(), Val: "javascript:"},
-				{Key: atom.Onclick.String(), Val: fmt.Sprintf("MarkRead(this, %q, %q, %v);", strconv.Quote(n.AppID), strconv.Quote(n.RepoSpec.URI), n.ThreadID)},
+				{Key: atom.Onclick.String(), Val: fmt.Sprintf("MarkRead(this, %q, %q, %v);", strconv.Quote(n.RepoSpec.URI), strconv.Quote(n.ThreadType), n.ThreadID)},
 				{Key: atom.Title.String(), Val: "Mark as read"},
 				{Key: atom.Style.String(), Val: "display: inline-block;"},
 			},
