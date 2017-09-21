@@ -20,6 +20,7 @@ import (
 )
 
 // New returns a notifications app http.Handler using given services and options.
+// It uses users service, if not nil, when displaying errors (admins see full details).
 //
 // In order to serve HTTP requests, the returned http.Handler expects each incoming
 // request to have a parameter provided to it via BaseURIContextKey context key.
