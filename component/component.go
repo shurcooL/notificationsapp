@@ -245,7 +245,12 @@ func (n Notification) Render() []*html.Node {
 		divClass += " read"
 	}
 	div := htmlg.DivClass(divClass, span1, span2)
-	if n.Participating {
+	switch {
+	case n.Mentioned:
+		div.Attr = append(div.Attr, html.Attribute{
+			Key: atom.Style.String(), Val: "background-color: #ffe6e6;",
+		})
+	case n.Participating:
 		div.Attr = append(div.Attr, html.Attribute{
 			Key: atom.Style.String(), Val: "background-color: #fff9e6;",
 		})
