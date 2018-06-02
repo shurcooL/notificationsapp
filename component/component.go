@@ -11,7 +11,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/shurcooL/htmlg"
 	"github.com/shurcooL/notifications"
-	"github.com/shurcooL/octiconssvg"
+	"github.com/shurcooL/octicon"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 )
@@ -110,7 +110,7 @@ func (r RepoNotifications) Render() []*html.Node {
 		<div class="RepoNotifications list-entry list-entry-border mark-as-read">
 			<div class="list-entry-header">
 				<span class="content"><a class="black gray-when-read" href="https://{{.Repo.URI}}"><strong>{{.Repo.URI}}</strong></a></span>
-				<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkAllRead(this, {{.Repo.URI | json}});" title="Mark all {{base .Repo.URI}} notifications as read" style="display: inline-block;"><octiconssvg.Check()></span></a></span>
+				<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkAllRead(this, {{.Repo.URI | json}});" title="Mark all {{base .Repo.URI}} notifications as read" style="display: inline-block;"><octicon.Check()></span></a></span>
 			</div>
 			{{range .Notifications}}
 				{{render .}}
@@ -141,7 +141,7 @@ func (r RepoNotifications) Render() []*html.Node {
 					{Key: atom.Title.String(), Val: fmt.Sprintf("Mark all %s notifications as read", path.Base(r.Repo.URI))},
 					{Key: atom.Style.String(), Val: "display: inline-block;"},
 				},
-				FirstChild: octiconssvg.Check(),
+				FirstChild: octicon.Check(),
 			},
 		),
 	))
@@ -174,7 +174,7 @@ func (n Notification) Render() []*html.Node {
 				<tr>
 				<td class="notification" style="width: 70%;">
 					<a class="black gray-when-read" onclick="MarkRead(this, {{`` | json}}, {{`` | json}}, 0);" href="{{.HTMLURL}}">
-						<span class="fade-when-read" style="color: {{.Color.HexString}}; margin-right: 6px; vertical-align: top;"><octiconssvg.Icon(.Icon)></span>
+						<span class="fade-when-read" style="color: {{.Color.HexString}}; margin-right: 6px; vertical-align: top;"><octicon.Icon(.Icon)></span>
 						{{.Title}}
 					</a>
 				</td>
@@ -185,7 +185,7 @@ func (n Notification) Render() []*html.Node {
 				</tr>
 				</table>
 			</span>
-			<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkRead(this, {{.RepoSpec.URI | json}}, {{.ThreadType | json}}, {{.ThreadID}});" title="Mark as read" style="display: inline-block;"><octiconssvg.Check()>"</a></span>
+			<span class="right-icon hide-when-read"><a href="javascript:" onclick="MarkRead(this, {{.RepoSpec.URI | json}}, {{.ThreadType | json}}, {{.ThreadID}});" title="Mark as read" style="display: inline-block;"><octicon.Check()>"</a></span>
 		</div>
 	*/
 	a := &html.Node{
@@ -202,7 +202,7 @@ func (n Notification) Render() []*html.Node {
 			{Key: atom.Class.String(), Val: "fade-when-read"},
 			{Key: atom.Style.String(), Val: fmt.Sprintf("color: %s; margin-right: 6px; vertical-align: top;", n.Color.HexString())},
 		},
-		FirstChild: octiconssvg.Icon(string(n.Icon)),
+		FirstChild: octicon.Icon(string(n.Icon)),
 	})
 	a.AppendChild(htmlg.Text(n.Title))
 	td1 := htmlg.TD(a)
@@ -237,7 +237,7 @@ func (n Notification) Render() []*html.Node {
 				{Key: atom.Title.String(), Val: "Mark as read"},
 				{Key: atom.Style.String(), Val: "display: inline-block;"},
 			},
-			FirstChild: octiconssvg.Check(),
+			FirstChild: octicon.Check(),
 		},
 	)
 	divClass := "list-entry-body multilist-entry mark-as-read"
