@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/shurcooL/go/ctxhttp"
 	"github.com/shurcooL/notifications"
 	"github.com/shurcooL/notificationsapp/httproute"
 	"github.com/shurcooL/users"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 // NewNotifications creates a client that implements notifications.Service remotely over HTTP.
