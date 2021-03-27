@@ -1,4 +1,4 @@
-// +build dev
+// +build notificationsappdev
 
 package assets
 
