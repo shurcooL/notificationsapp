@@ -1,7 +1,8 @@
 notificationsapp
 ================
 
-[![Build Status](https://travis-ci.org/shurcooL/notificationsapp.svg?branch=master)](https://travis-ci.org/shurcooL/notificationsapp) [![GoDoc](https://godoc.org/github.com/shurcooL/notificationsapp?status.svg)](https://godoc.org/github.com/shurcooL/notificationsapp)
+[![Go Reference](https://pkg.go.dev/badge/github.com/shurcooL/notificationsapp.svg)](https://pkg.go.dev/github.com/shurcooL/notificationsapp)
+[![Build Status](https://travis-ci.org/shurcooL/notificationsapp.svg?branch=master)](https://travis-ci.org/shurcooL/notificationsapp)
 
 Package notificationsapp is a web frontend for a notifications service.
 
@@ -13,7 +14,7 @@ Installation
 ------------
 
 ```bash
-go get -u github.com/shurcooL/notificationsapp
+go get github.com/shurcooL/notificationsapp
 ```
 
 Development
@@ -34,16 +35,16 @@ go generate github.com/shurcooL/notificationsapp/...
 Directories
 -----------
 
-| Path                                                                              | Synopsis                                                                             |
-|-----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| [assets](https://godoc.org/github.com/shurcooL/notificationsapp/assets)           | Package assets contains assets for notificationsapp.                                 |
-| [component](https://godoc.org/github.com/shurcooL/notificationsapp/component)     | Package component contains individual components that can render themselves as HTML. |
-| [frontend](https://godoc.org/github.com/shurcooL/notificationsapp/frontend)       | frontend script for notificationsapp.                                                |
-| [httpclient](https://godoc.org/github.com/shurcooL/notificationsapp/httpclient)   | Package httpclient contains notifications.Service implementation over HTTP.          |
-| [httphandler](https://godoc.org/github.com/shurcooL/notificationsapp/httphandler) | Package httphandler contains an API handler for notifications.Service.               |
-| [httproute](https://godoc.org/github.com/shurcooL/notificationsapp/httproute)     | Package httproute contains route paths for httpclient, httphandler.                  |
+| Path                                                                               | Synopsis                                                                             |
+|------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| [assets](https://pkg.go.dev/github.com/shurcooL/notificationsapp/assets)           | Package assets contains assets for notificationsapp.                                 |
+| [component](https://pkg.go.dev/github.com/shurcooL/notificationsapp/component)     | Package component contains individual components that can render themselves as HTML. |
+| [frontend](https://pkg.go.dev/github.com/shurcooL/notificationsapp/frontend)       | frontend script for notificationsapp.                                                |
+| [httpclient](https://pkg.go.dev/github.com/shurcooL/notificationsapp/httpclient)   | Package httpclient contains notifications.Service implementation over HTTP.          |
+| [httphandler](https://pkg.go.dev/github.com/shurcooL/notificationsapp/httphandler) | Package httphandler contains an API handler for notifications.Service.               |
+| [httproute](https://pkg.go.dev/github.com/shurcooL/notificationsapp/httproute)     | Package httproute contains route paths for httpclient, httphandler.                  |
 
 License
 -------
 
--	[MIT License](https://opensource.org/licenses/mit-license.php)
+-	[MIT License](LICENSE)
