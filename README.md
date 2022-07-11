@@ -2,7 +2,6 @@ notificationsapp
 ================
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/shurcooL/notificationsapp.svg)](https://pkg.go.dev/github.com/shurcooL/notificationsapp)
-[![Build Status](https://travis-ci.org/shurcooL/notificationsapp.svg?branch=master)](https://travis-ci.org/shurcooL/notificationsapp)
 
 Package notificationsapp is a web frontend for a notifications service.
 
@@ -13,7 +12,7 @@ Its notifications are implemented using this very package.
 Installation
 ------------
 
-```bash
+```sh
 go get github.com/shurcooL/notificationsapp
 ```
 
@@ -22,13 +21,13 @@ Development
 
 This package relies on `go generate` directives to process and statically embed assets. For development only, you may need extra dependencies. You can build and run the package in development mode, where all assets are always read and processed from disk:
 
-```bash
+```sh
 go build -tags=notificationsappdev something/that/uses/notificationsapp
 ```
 
 When you're done with development, you should run `go generate` and commit that:
 
-```bash
+```sh
 go generate github.com/shurcooL/notificationsapp/...
 ```
 

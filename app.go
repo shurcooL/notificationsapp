@@ -1,4 +1,4 @@
-// +build ignore
+//go:build ignore
 
 // An app that serves mock notifications for development and testing.
 package main

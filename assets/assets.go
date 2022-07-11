@@ -1,4 +1,4 @@
-// +build notificationsappdev
+//go:build notificationsappdev
 
 package assets
 
